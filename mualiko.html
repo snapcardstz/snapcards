@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Harusi ya Josephine & Mark — Mualiko</title>
+<title>Snap Cards — Mualiko</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <style>
@@ -558,8 +558,8 @@
       <div class="cover-photo-wrap" id="coverPhotoWrap">
         <img class="cover-photo" id="coverPhoto" alt="">
       </div>
-      <div class="monogram" id="coverMonogram">J &amp; M</div>
-      <div class="cover-names" id="coverNames">JOSEPHINE &nbsp;·&nbsp; MARK</div>
+      <div class="monogram" id="coverMonogram" style="display:none;"></div>
+      <div class="cover-names" id="coverNames"></div>
     </div>
     <div class="scroll-cue reveal" id="coverScrollCue">
       <span id="scrollCueLabel">Scroll Kuendelea</span>
@@ -577,8 +577,8 @@
         <path d="M2 30 C10 10, 25 6, 30 20 C25 10, 40 6, 48 22 C40 18, 32 24, 30 34 C28 26, 14 34, 2 30 Z" fill="#C79A3E" opacity="0.92"/>
       </svg>
     </div>
-    <h1 class="reveal" id="heroTitle" style="font-size:20px; letter-spacing:0.15em;">Wawili Wamekuwa Mmoja</h1>
-    <p class="reveal" id="heroVerse" style="max-width:280px;">Kwa neema ya Mungu na furaha ya mioyo yetu, tunafunga ndoa na tunapenda uwe sehemu ya siku hii adhimu.</p>
+    <h1 class="reveal" id="heroTitle" style="font-size:20px; letter-spacing:0.15em;"></h1>
+    <p class="reveal" id="heroVerse" style="max-width:280px;"></p>
   </section>
 
   <!-- 3. COUNTDOWN -->
@@ -595,12 +595,12 @@
   <section id="welcome">
     <div class="frame reveal" style="text-align:center;">
       <div class="eyebrow" id="welcomeEyebrow">Karibu</div>
-      <div class="guest-name" id="guestName">Neema Mushi</div>
+      <div class="guest-name" id="guestName"></div>
       <div id="guestBadges"></div>
-      <p style="max-width:280px; margin:0 auto;" id="welcomeMessage">Umealikwa rasmi kuungana nasi katika siku hii ya harusi.</p>
+      <p style="max-width:280px; margin:0 auto;" id="welcomeMessage"></p>
       <div class="date-badge">
         <span class="eyebrow" style="font-size:9px;" id="eventDateEyebrow">Event Date</span>
-        <span class="d" id="eventDateText">Jumamosi, 14 Februari 2027</span>
+        <span class="d" id="eventDateText"></span>
       </div>
     </div>
   </section>
@@ -609,15 +609,15 @@
   <section id="story">
     <div class="eyebrow reveal" id="storyEyebrow">Hadithi Yetu</div>
     <div class="story-line reveal"><div class="dot"></div><div class="rule"></div><div class="dot"></div></div>
-    <p class="reveal" style="max-width:290px; margin-top:16px;" id="storyText">Tulikutana miaka mitatu iliyopita, na tangu siku hiyo, safari yetu imejaa upendo, furaha, na shukrani. Leo tunafunga hatua mpya — na tunataka uwe shahidi wa agano hili.</p>
+    <p class="reveal" style="max-width:290px; margin-top:16px;" id="storyText"></p>
   </section>
 
   <!-- 6. ENTRY PASS -->
   <section id="pass">
     <div class="eyebrow reveal" id="passEyebrow">Your Entry Pass</div>
     <div class="pass-card reveal" style="margin-top:16px;">
-      <div class="qr-box" id="qrBox"><span>SAMPLE QR</span></div>
-      <div class="pass-num"><span id="passNumLabel">NAMBA:</span> <span id="passNum">HARUSI2027-014</span></div>
+      <div class="qr-box" id="qrBox"></div>
+      <div class="pass-num"><span id="passNumLabel">NAMBA:</span> <span id="passNum"></span></div>
       <p style="font-size:14px; opacity:0.75;" id="passHint">Onyesha QR hii mlangoni kwa uthibitisho wa haraka</p>
     </div>
   </section>
@@ -629,67 +629,39 @@
       <div class="venue-photo" id="venuePhoto1"><span class="venue-photo-label">Picha ya Ukumbi 1</span></div>
       <div class="venue-photo" id="venuePhoto2"><span class="venue-photo-label">Picha ya Ukumbi 2</span></div>
     </div>
-    <h2 class="reveal" style="font-size:22px; margin-top:18px;" id="venueName">Kilimanjaro Golden Hall</h2>
-    <p class="reveal" id="venueTime">Barabara ya Uhuru, Dodoma</p>
+    <h2 class="reveal" style="font-size:22px; margin-top:18px;" id="venueName"></h2>
+    <p class="reveal" id="venueTime"></p>
     <a href="#" class="map-btn reveal" id="mapBtn" rel="noopener">Fungua Ramani</a>
   </section>
 
   <!-- 8. DRESS CODE -->
   <section id="dresscode">
     <div class="eyebrow reveal" id="dresscodeEyebrow">Dressing Code</div>
-    <div class="swatch-grid reveal" id="swatchGrid">
-      <div class="swatch"><div class="chip" style="background:#C79A3E;"><div class="color-dot" style="background:#C79A3E;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Gold</span></div>
-      <div class="swatch"><div class="chip" style="background:#6b1e3c;"><div class="color-dot" style="background:#6b1e3c;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Wine</span></div>
-      <div class="swatch"><div class="chip" style="background:#f3b6c4;"><div class="color-dot" style="background:#f3b6c4;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Blush</span></div>
-      <div class="swatch"><div class="chip" style="background:#fbf3e7;"><div class="color-dot" style="background:#fbf3e7;"></div><div class="upload-hint" style="color:rgba(23,10,32,0.5);">+ Picha</div></div><span class="name">Ivory</span></div>
-      <div class="swatch"><div class="chip" style="background:#2f6b57;"><div class="color-dot" style="background:#2f6b57;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Emerald</span></div>
-      <div class="swatch"><div class="chip" style="background:#1c2b4a;"><div class="color-dot" style="background:#1c2b4a;"></div><div class="upload-hint">+ Picha</div></div><span class="name">Navy</span></div>
-    </div>
+    <div class="swatch-grid reveal" id="swatchGrid"></div>
   </section>
 
   <!-- 9. PROGRAM -->
   <section id="program">
     <div class="eyebrow reveal" id="programEyebrow">Celebration Program</div>
-    <div class="program-list reveal" id="programList">
-      <div class="program-item"><div class="program-bar" style="background:#C79A3E;"></div>
-        <div class="program-body"><span class="ev">Kupokelewa kwa Wageni</span><span class="tm">10:00</span></div></div>
-      <div class="program-item"><div class="program-bar" style="background:#f3b6c4;"></div>
-        <div class="program-body"><span class="ev">Kuingia kwa Bibi &amp; Bwana Harusi</span><span class="tm">11:30</span></div></div>
-      <div class="program-item"><div class="program-bar" style="background:#2f6b57;"></div>
-        <div class="program-body"><span class="ev">Chakula cha Mchana</span><span class="tm">13:00</span></div></div>
-      <div class="program-item"><div class="program-bar" style="background:#6b1e3c;"></div>
-        <div class="program-body"><span class="ev">Kukata Keki</span><span class="tm">15:00</span></div></div>
-      <div class="program-item"><div class="program-bar" style="background:#C79A3E;"></div>
-        <div class="program-body"><span class="ev">Densi &amp; Sherehe</span><span class="tm">16:00</span></div></div>
-    </div>
+    <div class="program-list reveal" id="programList"></div>
   </section>
 
   <!-- 10. WAZAZI / HOSTS -->
   <section id="hosts">
     <div class="eyebrow reveal" id="hostsEyebrow">Wazazi wa Harusi</div>
-    <div class="hosts-grid reveal" id="hostsGrid">
-      <div class="host"><span class="lbl">Upande wa Bibi</span><span class="nm">Bw. na Bi. Mushi</span></div>
-      <div class="host"><span class="lbl">Upande wa Bwana</span><span class="nm">Bw. na Bi. Komba</span></div>
-    </div>
+    <div class="hosts-grid reveal" id="hostsGrid"></div>
   </section>
 
   <!-- 11. WAHUDUMU / SERVICE PROVIDERS -->
   <section id="providers">
     <div class="eyebrow reveal" id="providersEyebrow">Wahudumu wa Tukio</div>
-    <div class="providers-list reveal" id="providersList">
-      <div class="provider-item"><span class="nm">MC - Baraka Ngowi</span><a class="phone" href="tel:0712345678">0712 345 678</a></div>
-      <div class="provider-item"><span class="nm">DJ - Elia Massawe</span><a class="phone" href="tel:0765432109">0765 432 109</a></div>
-    </div>
+    <div class="providers-list reveal" id="providersList"></div>
   </section>
 
   <!-- 12. ZAWADI -->
   <section id="gift">
     <div class="eyebrow reveal" id="giftEyebrow">Zawadi</div>
-    <div class="gift-card reveal" id="giftCard">
-      <p>Uwepo wako ndio zawadi kubwa kwetu. Kama ungependa kuchangia, karibu:</p>
-      <div class="line">M-PESA / Selcom: 0713 079 348</div>
-      <div class="line">Jina: Josephine Mushi</div>
-    </div>
+    <div class="gift-card reveal" id="giftCard"></div>
   </section>
 
   <!-- 13. NOTE -->
@@ -706,7 +678,7 @@
   <!-- 14. THANK YOU -->
   <section id="thankyou">
     <div class="script thankyou-script reveal" id="thankyouScript">Asante</div>
-    <p class="reveal" style="margin-top:10px; max-width:260px;"><span id="thankyouIntro">Tunafurahi kukuwa nawe katika siku hii. Tuonane </span><span id="thankyouDate">14 Februari 2027</span><span id="thankyouOutro">!</span></p>
+    <p class="reveal" style="margin-top:10px; max-width:260px;"><span id="thankyouIntro">Tunafurahi kukuwa nawe katika siku hii. Tuonane </span><span id="thankyouDate"></span><span id="thankyouOutro">!</span></p>
   </section>
 
 
@@ -747,9 +719,15 @@
   revealEls.forEach(el => io.observe(el));
 
   // ---------- COUNTDOWN (tarehe halisi inawekwa na loadInvitation() chini) ----------
-  let eventTargetMs = new Date('2027-02-14T10:00:00+03:00').getTime(); // fallback ya sampuli
+  let eventTargetMs = null; // hujazwa tu baada ya kupokea tarehe halisi ya event
   function updateCountdown(){
     const now = Date.now();
+    if(!Number.isFinite(eventTargetMs)){
+      document.getElementById('cdDays').textContent = '--';
+      document.getElementById('cdHours').textContent = '--';
+      document.getElementById('cdMins').textContent = '--';
+      return;
+    }
     const diff = Math.max(0, eventTargetMs - now);
     const days = Math.floor(diff / 86400000);
     const hours = Math.floor((diff % 86400000) / 3600000);
@@ -947,6 +925,7 @@
   function renderCover(eventData, content, lang){
     lang = lang || currentLang;
     const properCoverNames = pickLang(eventData?.cover_names || content?.cover_names || null, lang);
+    const customMonogram = pickLang(eventData?.cover_monogram || content?.cover_monogram || null, lang);
     // Fallback: kama 'cover_names' haijajazwa kwa event hii, tumia jina la event
     // (events.name) badala ya kubaki na maandishi ya default ("JOSEPHINE & MARK")
     // yaliyowekwa kwenye HTML - hii inazuia event tofauti kuonyesha jina la couple
@@ -959,13 +938,23 @@
     if(names && names.trim()){
       document.getElementById('coverNames').textContent = names.trim();
       const initials = deriveInitials(names.trim());
-      if(initials){
+      if(customMonogram && String(customMonogram).trim()){
+        document.getElementById('coverMonogram').textContent = String(customMonogram).trim();
+        document.getElementById('coverMonogram').style.display = '';
+      } else if(initials){
         document.getElementById('coverMonogram').textContent = initials;
+        document.getElementById('coverMonogram').style.display = '';
       } else if(!properCoverNames){
         // Jina la event (si "X & Y") halitoi monogram yenye maana - ficha badala
         // ya kuonyesha "J & M" isiyohusiana.
         document.getElementById('coverMonogram').style.display = 'none';
       }
+    }
+
+    if(!names || !String(names).trim()){
+      document.getElementById('coverNames').textContent = '';
+      document.getElementById('coverMonogram').textContent = customMonogram ? String(customMonogram).trim() : '';
+      document.getElementById('coverMonogram').style.display = customMonogram ? '' : 'none';
     }
 
     if(photoUrl){
@@ -1024,6 +1013,13 @@
     content = content || {};
 
     // 5. HADITHI YETU
+    const storyHeading = pickLang(content.story_heading, lang);
+    const storyHeadingEl = document.getElementById('storyEyebrow');
+    if(storyHeadingEl && storyHeading && String(storyHeading).trim()){
+      storyHeadingEl.textContent = String(storyHeading).trim();
+    } else if(storyHeadingEl){
+      storyHeadingEl.textContent = T[lang]?.storyEyebrow || 'Our Story';
+    }
     const storyText = document.getElementById('storyText');
     const storyVal = pickLang(content.story, lang);
     if(storyVal && String(storyVal).trim()){
@@ -1284,12 +1280,56 @@
       .rpc('get_invitation_by_card', { p_card_id: token });
 
     if(guestErr || !result){
-      showLoadError('Mualiko huu haukupatikana. Huenda kiungo si sahihi au kimeondolewa.');
+      if(guestErr) console.error('get_invitation_by_card RPC error:', guestErr);
+      showLoadError(guestErr
+        ? 'Imeshindikana kupakia taarifa za mwaliko kwa sasa. Tafadhali jaribu tena baadaye.'
+        : 'Mualiko huu haukupatikana. Huenda kiungo si sahihi au kimeondolewa.');
       return;
     }
 
-    const guest = result.guest;
-    const eventData = result.event;
+    // RPC inaweza kurudisha muundo wa zamani uliokuwa nested (guest/event)
+    // au muundo tambarare wa get_invitation_by_card. Normalize zote mbili hapa.
+    const guest = result.guest || {
+      id: result.guest_id, name: result.guest_name, card_id: result.card_id,
+      group_size: result.group_size, vip_status: result.vip_status
+    };
+    const flatContent = (result.content && typeof result.content === 'object') ? {...result.content} : {};
+    const eventData = result.event || {
+      id: result.event_id, name: result.event_name, type: result.event_type,
+      event_date: result.event_date, event_time: result.event_time,
+      venue: result.venue, location_url: result.location_url,
+      coordinates: result.coordinates, content: flatContent,
+      user_id: result.user_id, contact_phone: result.contact_phone,
+      show_vip_badge: result.show_vip_badge, show_group_label: result.show_group_label,
+      cover_names: result.cover_names, cover_monogram: result.cover_monogram,
+      cover_photo_url: result.cover_photo_url, cover_monogram_y: result.cover_monogram_y,
+      cover_names_y: result.cover_names_y, cover_taphint_y: result.cover_taphint_y,
+      hero_title: result.hero_title, hero_verse: result.hero_verse,
+      welcome_message: result.welcome_message, date_language: result.date_language,
+      ui_language_mode: result.ui_language_mode, venue_photo_1: result.venue_photo_1,
+      venue_photo_2: result.venue_photo_2, story_heading: result.story_heading,
+      story: result.story, program: result.program, dress_code: result.dress_code,
+      hosts: result.hosts, providers: result.providers, gift: result.gift
+    };
+    // Muundo wa RPC mpya hutuma baadhi ya sehemu za design katika root.
+    // Ziunganishe kwenye content kwa sababu renderContentSections hutumia content.
+    eventData.content = {
+      ...(eventData.content && typeof eventData.content === 'object' ? eventData.content : {}),
+      ...(result.story !== undefined ? {story: result.story} : {}),
+      ...(result.story_heading !== undefined ? {story_heading: result.story_heading} : {}),
+      ...(eventData.story_heading !== undefined ? {story_heading: eventData.story_heading} : {}),
+      ...(result.program !== undefined ? {program: result.program} : {}),
+      ...(result.dress_code !== undefined ? {dress_code: result.dress_code} : {}),
+      ...(result.hosts !== undefined ? {hosts: result.hosts} : {}),
+      ...(result.providers !== undefined ? {providers: result.providers} : {}),
+      ...(result.gift !== undefined ? {gift: result.gift} : {}),
+      ...(result.cover_monogram !== undefined ? {cover_monogram: result.cover_monogram} : {})
+    };
+
+    if(!guest.card_id){
+      showLoadError('Taarifa za kadi hazijakamilika. Tafadhali wasiliana na mwenye tukio.');
+      return;
+    }
 
     // ---- Jaza taarifa halisi kwenye ukurasa ----
     currentGuestCardId = guest.card_id;
@@ -1360,7 +1400,7 @@
       document.title = `${coverNamesForTitle} — Mualiko`;
 
       if(eventData.event_date){
-        const timeStr = eventData.event_time || '10:00';
+        const timeStr = eventData.event_time || '00:00';
         eventTargetMs = new Date(`${eventData.event_date}T${timeStr}:00+03:00`).getTime();
         updateCountdown();
       }
