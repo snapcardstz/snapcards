@@ -2486,10 +2486,10 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Jina</th><th>Barua Pepe</th><th>Jukumu</th><th>Tarehe ya Kujiunga</th><th>Vitendo</th></tr>
+                <tr><th>Jina</th><th>Barua Pepe</th><th>Provider</th><th>Jukumu</th><th>Tarehe ya Kujiunga</th><th>Vitendo</th></tr>
               </thead>
               <tbody id="usersTable">
-                <tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Inapakia...</td></tr>
+                <tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">Inapakia...</td></tr>
               </tbody>
             </table>
           </div>
@@ -3294,12 +3294,16 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
         </div>
       </div>
       <div class="form-group">
+        <label>Namba ya Simu</label>
+        <input type="tel" id="newUserPhone" placeholder="0712345678" autocomplete="tel">
+      </div>
+      <div class="form-group">
         <label>Barua Pepe</label>
-        <input type="email" id="newUserEmail" placeholder="barua@pepe.com">
+        <input type="email" id="newUserEmail" placeholder="barua@pepe.com" autocomplete="email">
       </div>
       <div class="form-group">
         <label>Nenosiri la Mwanzo</label>
-        <input type="password" id="newUserPass" placeholder="Herufi 6 au zaidi">
+        <input type="password" id="newUserPass" placeholder="Herufi 8 au zaidi">
       </div>
       <div class="form-group">
         <label>Jukumu</label>
@@ -3687,8 +3691,8 @@ async function loadProfile() {
     currentProfile = data;
     const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Mtumiaji';
     const initials = (data.first_name || 'M')[0].toUpperCase();
-    const roleTitles = { admin: 'Managing Director', manager: 'Event Manager', scanner: 'Event Scanner' };
-    const roleTitle = roleTitles[data.role] || 'Mtumiaji';
+    const roleTitles = { admin: 'Admin', manager: 'Event Manager', scanner: 'Event Scanner' };
+    const roleTitle = data.is_owner ? 'Owner' : (roleTitles[data.role] || 'Mtumiaji');
     const welcome = document.getElementById('dashboardWelcome');
     const welcomeRole = document.getElementById('dashboardRoleTitle');
     const welcomeSub = document.getElementById('dashboardWelcomeSub');
@@ -3698,11 +3702,11 @@ async function loadProfile() {
     if (welcomeSub) welcomeSub.textContent = 'Muhtasari wa shughuli zako, wageni na matukio yote sehemu moja.';
     document.getElementById('sidebarAvatar').textContent = initials;
     document.getElementById('sidebarName').textContent = name;
-    document.getElementById('sidebarRole').textContent = data.role || 'Admin';
+    document.getElementById('sidebarRole').textContent = data.is_owner ? 'Owner' : (data.role || 'Admin');
     document.getElementById('profileAvatar').textContent = initials;
     document.getElementById('profileName').textContent = name;
     document.getElementById('profileEmail').textContent = data.email || '';
-    document.getElementById('profileRole').textContent = data.role || 'Admin';
+    document.getElementById('profileRole').textContent = data.is_owner ? 'Owner' : (data.role || 'Admin');
     document.getElementById('profFirstName').value = data.first_name || '';
     document.getElementById('profLastName').value = data.last_name || '';
     document.getElementById('profPhone').value = data.phone || '';
@@ -6607,7 +6611,7 @@ async function loadUsers() {
   _loadedUsersCache = data || [];
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna watumiaji</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:32px;">Hakuna watumiaji</td></tr>`;
     return;
   }
 
@@ -6662,6 +6666,7 @@ async function loadUsers() {
     <tr>
       <td><strong>${u.first_name || ''} ${u.last_name || ''}</strong>${isSelf ? ' <span style="font-size:11px;color:var(--gray-400);">(wewe)</span>' : ''}${u.phone ? `<div style="font-size:11px;color:var(--gray-400);">${u.phone}</div>` : ''}${(u.role === 'manager' || u.role === 'scanner') ? `<div style="font-size:11px;color:var(--gray-400);margin-top:2px;"><i data-lucide="ticket" class="icon-inline" aria-hidden="true"></i> ${(eventsByProfile.get(u.id) || []).length ? (eventsByProfile.get(u.id) || []).join(', ') : 'Hakuna event bado'}</div>` : ''}</td>
       <td>${u.email || '-'}</td>
+      <td><span class="badge badge-gray">Email</span></td>
       <td>${roleCell}</td>
       <td style="font-size:12px;color:var(--gray-400);">${new Date(u.created_at).toLocaleDateString('sw')}</td>
       <td style="white-space:nowrap;">${actionButtons.join(' ') || '<span style="font-size:11px;color:var(--gray-400);">-</span>'}</td>
@@ -6820,6 +6825,7 @@ async function addUser() {
   const first = document.getElementById('newUserFirst').value.trim();
   const last  = document.getElementById('newUserLast').value.trim();
   const email = document.getElementById('newUserEmail').value.trim();
+  const phone = document.getElementById('newUserPhone').value.trim();
   const pass  = document.getElementById('newUserPass').value;
   const role  = document.getElementById('newUserRole').value;
 
@@ -6845,7 +6851,7 @@ async function addUser() {
         'Authorization': `Bearer ${token}`,
         'apikey': SUPABASE_KEY
       },
-      body: JSON.stringify({ first_name: first, last_name: last, email, password: pass, role })
+      body: JSON.stringify({ first_name: first, last_name: last, display_name: `${first} ${last}`.trim(), phone, email, password: pass, role })
     });
 
     let result = {};
