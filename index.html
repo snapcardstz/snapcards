@@ -16,7 +16,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Roboto:wght@400;500;700&family=Merriweather:wght@400;700&family=Lora:wght@400;600;700&family=Alex+Brush&family=Sacramento&family=Allura&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Cinzel+Decorative:wght@700&family=Abril+Fatface&family=Lobster&family=Bebas+Neue&family=Cinzel:wght@600;700&family=Caveat:wght@500;700&family=Shadows+Into+Light&family=Indie+Flower&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap');
 
   :root {
-    --logo-url: none; /* Logo hupakiwa kutoka ; hakuna legacy hard-coded logo. */
+    --logo-url: none; /* Logo hupakiwa kutoka Supabase; hakuna legacy hard-coded logo. */
     --blue:    #0047AB;
     --blue-dark: #1A1A2E;
     --blue-light: #EAF0FA;
@@ -1917,6 +1917,11 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
               <input type="text" id="invCoverNames" placeholder="JOSEPHINE · MARK" oninput="renderCoverLivePreview()">
             </div>
             <div class="form-group">
+              <label>Monogram (Herufi za Jalada)</label>
+              <input type="text" id="invCoverMonogram" maxlength="24" placeholder="Mfano: A &amp; B" oninput="renderCoverLivePreview()">
+              <small style="color:var(--gray-500);">Andika herufi au alama unazotaka zionekane kwenye jalada. Zikiachwa wazi, mfumo utatumia initials za majina.</small>
+            </div>
+            <div class="form-group">
               <label>Picha ya Cover </label>
               <div style="display:flex; align-items:center; gap:12px;">
                 <div id="coverPhotoPreview" style="width:64px;height:85px;border-radius:6px;background:var(--gray-100);background-size:cover;background-position:center;border:1px solid var(--gray-200);flex-shrink:0;"></div>
@@ -1954,8 +1959,8 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
                     <div style="position:absolute;bottom:4.7px;right:4.7px;width:9.4px;height:9.4px;border:1px solid #d8ae55;border-left:none;border-top:none;z-index:2;"></div>
                     <img id="cvpPhoto" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;display:none;">
                     <div id="cvpOverlay" style="position:absolute;inset:0;z-index:1;display:none;background:linear-gradient(180deg,rgba(23,10,32,0.28),rgba(23,10,32,0.55) 55%,rgba(23,10,32,0.8));"></div>
-                    <div id="cvpMonogram" style="font-family:'Sacramento';font-size:20.63px;color:#f2d889;position:relative;z-index:2;">J &amp; M</div>
-                    <div id="cvpNames" style="font-family:'Cinzel';font-size:7.03px;letter-spacing:0.3em;color:#fbf3e7;opacity:0.85;position:relative;z-index:2;text-align:center;">JOSEPHINE · MARK</div>
+                    <div id="cvpMonogram" style="font-family:'Sacramento';font-size:20.63px;color:#f2d889;position:relative;z-index:2;"></div>
+                    <div id="cvpNames" style="font-family:'Cinzel';font-size:7.03px;letter-spacing:0.3em;color:#fbf3e7;opacity:0.85;position:relative;z-index:2;text-align:center;"></div>
                   </div>
                   <p style="font-size:10px;color:var(--gray-400);text-align:center;margin-top:6px;">Preview ya Cover</p>
                 </div>
@@ -1984,9 +1989,13 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
               </div>
               <input type="hidden" id="invUiLanguageMode" value="">
             </div>
+            <div class="form-group">
+              <label>Kichwa cha Hadithi (Our Story Heading)</label>
+              <input type="text" id="invStoryHeading" placeholder="Mfano: Hadithi Yetu">
+            </div>
             <div class="form-group" style="margin-bottom:0;">
-              <label>Hadithi Yetu (Our Story)</label>
-              <textarea id="invStoryText" rows="3" placeholder="Tulikutana miaka mitatu iliyopita..."></textarea>
+              <label>Ujumbe wa Hadithi (Our Story)</label>
+              <textarea id="invStoryText" rows="3" placeholder="Andika hadithi ya tukio hili..."></textarea>
             </div>
           </div>
 
@@ -7993,6 +8002,7 @@ async function loadInvitationDesign() {
 
   document.getElementById('invDesignId').value = data?.id || '';
   document.getElementById('invCoverNames').value = data?.cover_names || '';
+  document.getElementById('invCoverMonogram').value = data?.cover_monogram || '';
   document.getElementById('invCoverPhotoUrl').value = data?.cover_photo_url || '';
   document.getElementById('coverPhotoPreview').style.backgroundImage = data?.cover_photo_url ? `url('${data.cover_photo_url}')` : 'none';
   document.getElementById('invCoverMonogramY').value = data?.cover_monogram_y || 0;
@@ -8004,6 +8014,7 @@ async function loadInvitationDesign() {
   document.getElementById('invHeroVerse').value = data?.hero_verse || '';
   document.getElementById('invWelcomeMessage').value = data?.welcome_message || '';
   setUiLanguageMode(data?.ui_language_mode || '');
+  document.getElementById('invStoryHeading').value = data?.story_heading || '';
   document.getElementById('invStoryText').value = data?.story_text || '';
   document.getElementById('invVenueName').value = data?.venue_name || '';
   document.getElementById('invVenueAddress').value = data?.venue_address || '';
@@ -8044,6 +8055,7 @@ async function saveInvitationDesign() {
     user_id: ORG_OWNER_ID,
     event_id: eventId,
     cover_names: document.getElementById('invCoverNames').value.trim(),
+    cover_monogram: document.getElementById('invCoverMonogram').value.trim(),
     cover_photo_url: document.getElementById('invCoverPhotoUrl').value.trim(),
     cover_monogram_y: parseInt(document.getElementById('invCoverMonogramY').value, 10) || 0,
     cover_names_y: parseInt(document.getElementById('invCoverNamesY').value, 10) || 0,
@@ -8051,6 +8063,7 @@ async function saveInvitationDesign() {
     hero_verse: document.getElementById('invHeroVerse').value.trim(),
     welcome_message: document.getElementById('invWelcomeMessage').value.trim(),
     ui_language_mode: document.getElementById('invUiLanguageMode').value.trim(),
+    story_heading: document.getElementById('invStoryHeading').value.trim(),
     story_text: document.getElementById('invStoryText').value.trim(),
     venue_name: document.getElementById('invVenueName').value.trim(),
     venue_address: document.getElementById('invVenueAddress').value.trim(),
@@ -8081,8 +8094,8 @@ async function saveInvitationDesign() {
 // ---------- DRESS CODE ROWS ----------
 function addDressColorRow(existing) {
   const id = 'dc_' + (dressColorRowSeq++);
-  const hex = existing?.hex || DRESS_COLOR_OPTIONS[0].hex;
-  const label = existing?.label || DRESS_COLOR_OPTIONS[0].name;
+  const hex = existing?.hex || '#C79A3E';
+  const label = existing?.label || '';
   const photoUrl = existing?.photo_url || '';
 
   const row = document.createElement('div');
@@ -8092,9 +8105,7 @@ function addDressColorRow(existing) {
     <div class="dc-photo-frame" style="width:44px;height:58px;border-radius:6px;flex-shrink:0;position:relative;background-size:cover;background-position:center;border:1px solid var(--gray-200);background-color:${hex};background-image:${photoUrl ? `url('${photoUrl}')` : 'none'};">
       <div class="dc-color-dot" style="position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:${hex};border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>
     </div>
-    <select class="dc-color" style="width:110px;">
-      ${DRESS_COLOR_OPTIONS.map(c => `<option value="${c.hex}" ${c.hex.toLowerCase() === hex.toLowerCase() ? 'selected' : ''}>${c.name}</option>`).join('')}
-    </select>
+    <input type="color" class="dc-color" value="${hex}" aria-label="Chagua rangi kwenye gradient" title="Chagua rangi yoyote" style="width:48px;height:42px;border:0;padding:2px;background:transparent;flex-shrink:0;cursor:pointer;">
     <input type="text" class="dc-label" value="${label}" placeholder="Jina la rangi" style="flex:1;min-width:0;">
     <input type="file" accept="image/*" style="display:none;" onchange="uploadDressPhoto('${id}', this)">
     <button class="btn btn-outline btn-sm" onclick="this.previousElementSibling.click()" title="Pakia Picha"><i data-lucide="upload" style="width:14px;height:14px;"></i></button>
@@ -8103,8 +8114,8 @@ function addDressColorRow(existing) {
   row.querySelector('.dc-color').addEventListener('change', function(){
     row.querySelector('.dc-photo-frame').style.backgroundColor = this.value;
     row.querySelector('.dc-color-dot').style.background = this.value;
-    const opt = DRESS_COLOR_OPTIONS.find(c => c.hex.toLowerCase() === this.value.toLowerCase());
-    if (opt) row.querySelector('.dc-label').value = opt.name;
+    // Jina la rangi linaachwa chini ya udhibiti wa mtumiaji.
+
   });
   document.getElementById('dressColorsList').appendChild(row);
   try { lucide.createIcons(); } catch(e) {}
@@ -8228,6 +8239,7 @@ function resetCoverPositions() {
 
 function renderCoverLivePreview() {
   const namesRaw = document.getElementById('invCoverNames').value.trim();
+  const monogramRaw = document.getElementById('invCoverMonogram').value.trim();
   const photoUrl = document.getElementById('invCoverPhotoUrl').value.trim();
   const monoY = parseInt(document.getElementById('invCoverMonogramY').value, 10) || 0;
   const namesY = parseInt(document.getElementById('invCoverNamesY').value, 10) || 0;
@@ -8242,11 +8254,14 @@ function renderCoverLivePreview() {
     const parts = namesRaw.split(/[·&]| na |,/i).map(s => s.trim()).filter(Boolean);
     if (parts.length >= 2 && parts[0][0] && parts[1][0]) {
       document.getElementById('cvpMonogram').textContent = `${parts[0][0].toUpperCase()} & ${parts[1][0].toUpperCase()}`;
+    } else {
+      document.getElementById('cvpMonogram').textContent = '';
     }
   } else {
-    document.getElementById('cvpNames').textContent = 'JOSEPHINE · MARK';
-    document.getElementById('cvpMonogram').textContent = 'J & M';
+    document.getElementById('cvpNames').textContent = '';
+    document.getElementById('cvpMonogram').textContent = '';
   }
+  if (monogramRaw) document.getElementById('cvpMonogram').textContent = monogramRaw;
 
   const cvpPhoto = document.getElementById('cvpPhoto');
   const cvpOverlay = document.getElementById('cvpOverlay');
