@@ -402,10 +402,16 @@
   }
   .vip-pill.vvip{background:#E4C888; color:#3a2a05;}
   .vip-pill.vip{background:rgba(199,154,62,0.22); color:var(--plum-deep); border:1px solid rgba(199,154,62,0.5);}
+  #guestBadges{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;margin-top:12px;}
+  #guestBadges:empty{display:none;}
+  .vip-pill,.group-pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:124px;text-align:center;font-size:12px;}
+  .vip-pill{margin:0;}
   .group-pill{
-    display:inline-block; margin-top:8px; margin-left:6px; font-family:'Jost'; font-size:11px; letter-spacing:0.08em;
-    padding:5px 14px; border-radius:20px; background:rgba(42,18,32,0.06); color:var(--plum-deep); opacity:0.85;
+    margin:0;font-family:'Jost';font-size:11px;font-weight:600;letter-spacing:0.10em;
+    padding:7px 18px;border-radius:20px;background:rgba(42,18,32,0.06);
+    color:var(--plum-deep);opacity:0.9;border:1px solid rgba(199,154,62,0.35);
   }
+  .group-icon{filter:grayscale(1);opacity:0.68;font-size:15px;line-height:1;}
 
   /* ============ LANGUAGE TOGGLE (SW / EN) ============ */
   .lang-toggle{
@@ -652,7 +658,6 @@
     <div class="frame reveal" style="text-align:center;">
       <div class="eyebrow" id="welcomeEyebrow">Karibu</div>
       <div class="guest-name" id="guestName"></div>
-      <div id="guestBadges"></div>
       <p style="max-width:280px; margin:0 auto;" id="welcomeMessage"></p>
       <div class="date-badge">
         <span class="eyebrow" style="font-size:9px;" id="eventDateEyebrow">Event Date</span>
@@ -676,6 +681,7 @@
       <div class="pass-num"><span id="passNumLabel">NAMBA:</span> <span id="passNum"></span></div>
       <p style="font-size:14px; opacity:0.75;" id="passHint">Onyesha QR hii mlangoni kwa uthibitisho wa haraka</p>
     </div>
+    <div id="guestBadges" aria-label="Taarifa za kadi ya mgeni"></div>
   </section>
 
   <!-- 7. RECEPTION -->
@@ -725,7 +731,7 @@
   <section id="note">
     <div class="eyebrow reveal" id="noteEyebrow">Leave a Note to the Couple</div>
     <form class="note-form reveal" onsubmit="return sendNote(event)">
-      <textarea id="noteTextarea" placeholder="Andika salamu zako kwa bibi na bwana harusi..." required maxlength="2000"></textarea>
+      <textarea id="noteTextarea" required maxlength="2000"></textarea>
       <button type="submit" id="noteSubmitBtn">Tuma Salamu</button>
       <p class="note-error" id="noteError" style="display:none; color:#f3b6c4; font-family:'Jost'; font-size:12px; margin:0;"></p>
     </form>
@@ -1174,7 +1180,7 @@
       dresscodeEyebrow:'Mavazi Yanayopendekezwa', programEyebrow:'Ratiba ya Sherehe',
       hostsEyebrow:'Wazazi wa Harusi', providersEyebrow:'Wahudumu wa Tukio',
       giftEyebrow:'Zawadi', noteEyebrow:'Acha Ujumbe kwa Bibi na Bwana Harusi',
-      notePlaceholder:'Andika salamu zako kwa bibi na bwana harusi...',
+      notePlaceholder:'',
       noteSubmit:'Tuma Salamu', noteSent:'Asante! Salamu yako imepokelewa 💛',
       noteErrEmpty:'Tafadhali andika ujumbe kabla ya kutuma.',
       noteErrNoPhone:'Samahani, namba ya kuwasiliana haikupatikana kwa tukio hili.',
@@ -1193,7 +1199,7 @@
       dresscodeEyebrow:'Dress Code', programEyebrow:'Celebration Program',
       hostsEyebrow:'Parents of the Couple', providersEyebrow:'Event Service Providers',
       giftEyebrow:'Gift', noteEyebrow:'Leave a Note to the Couple',
-      notePlaceholder:'Write your message to the couple...',
+      notePlaceholder:'',
       noteSubmit:'Send Note', noteSent:'Thank you! Your note has been received 💛',
       noteErrEmpty:'Please write a message before sending.',
       noteErrNoPhone:'Sorry, no contact number was found for this event.',
@@ -1334,8 +1340,11 @@
         html += `<span class="vip-pill vip">${rank}</span>`;
       }
     }
-    if(eventData?.show_group_label !== false && (guest.group_size || 1) > 1){
-      html += `<span class="group-pill">👥 Kikundi cha ${guest.group_size}</span>`;
+    if(eventData?.show_group_label !== false){
+      const groupSize = Math.max(1, Number.parseInt(guest.group_size, 10) || 1);
+      const groupLabel = groupSize === 1 ? 'SINGLE' : groupSize === 2 ? 'DOUBLE' : `GROUP OF ${groupSize}`;
+      const groupIcon = groupSize === 1 ? '👤' : '👥';
+      html += `<span class="group-pill"><span class="group-icon" aria-hidden="true">${groupIcon}</span><span>${groupLabel}</span></span>`;
     }
     wrap.innerHTML = html;
   }
@@ -2159,7 +2168,7 @@
     <div class="snap-badge-group">
     <div class="card-stage">
       <div class="invite-card">
-        <div class="eyebrow" id="mockEyebrow">SNAP CARDS NI FURAHA YETU KUKUALIKA</div>
+        <div class="eyebrow" id="mockEyebrow">SNAP CARDS NI FURAHA YETU KUKUALIKA/KUWAALIKA</div>
         <div class="names" id="mockNames">Fulani</div>
         <hr>
         <div class="date"><span class="date-day" id="mockDay">Jumamosi</span><span class="date-value" id="mockDate">14 Novemba</span></div>
@@ -2413,7 +2422,7 @@
       ctaWa:"Ongea nasi WhatsApp",
       ecoLine1:"Huduma zetu zinapatikana nchi nzima, kwa mataifa haya bila kikwazo chochote.",
       ecoLine2:"Hakuna Kutumia Karatasi",
-      mockEyebrow:"SNAP CARDS NI FURAHA YETU KUKUALIKA",
+      mockEyebrow:"SNAP CARDS NI FURAHA YETU KUKUALIKA/KUWAALIKA",
       mockNames:"Fulani",
       mockDay:"Jumamosi",
       mockDate:"14 Novemba",
