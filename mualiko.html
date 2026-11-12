@@ -1236,14 +1236,16 @@
     setText('mapBtn', t.mapBtn);
     setText('dresscodeEyebrow', t.dresscodeEyebrow);
     setText('programEyebrow', t.programEyebrow);
-    const customHostsHeading = pickLang(lastContent?.hosts?.[0]?.heading, lang).trim();
+    const customHostsHeading = String(pickLang(lastContent?.hosts?.[0]?.heading, lang) ?? '').trim();
     const hostsHeadingEl = document.getElementById('hostsEyebrow');
-    if (customHostsHeading) {
-      setText('hostsEyebrow', customHostsHeading);
-      hostsHeadingEl.style.display = '';
-    } else {
-      hostsHeadingEl.textContent = '';
-      hostsHeadingEl.style.display = 'none';
+    if (hostsHeadingEl) {
+      if (customHostsHeading) {
+        hostsHeadingEl.textContent = customHostsHeading;
+        hostsHeadingEl.style.display = '';
+      } else {
+        hostsHeadingEl.textContent = '';
+        hostsHeadingEl.style.display = 'none';
+      }
     }
     setText('providersEyebrow', t.providersEyebrow);
     setText('giftEyebrow', t.giftEyebrow);
