@@ -1349,26 +1349,30 @@
     // 1) Tafuta mgeni na taarifa za event husika kwa pamoja - kupitia RPC
     // (inayopita RLS kwa usalama, kama vile submit_guest_note inavyofanya
     // kwa "Ujumbe wa Shukrani"). Hii inaepuka 406 kwa mgeni asiye-login.
-    const { data: result, error: guestErr } = await invitationWithTimeout(
+    const { data: rawResult, error: guestErr } = await invitationWithTimeout(
       sb.rpc('get_invitation_by_card', { p_card_id: token }),
-      'Kupata taarifa za mgeni', 15000
+      'Kupata taarifa za mgeni', 25000
     );
+    const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
 
-    if(guestErr || !result){
-      if(guestErr) console.error('get_invitation_by_card RPC error:', guestErr);
+    if(guestErr || !result || (typeof result === 'object' && !Object.keys(result).length)){
+      if(guestErr) console.error('get_invitation_by_card RPC error:', guestErr, 'Card ID:', token);
       showLoadError(guestErr
-        ? 'Imeshindikana kupakia taarifa za mwaliko kwa sasa. Tafadhali jaribu tena baadaye.'
-        : 'Mualiko huu haukupatikana. Huenda kiungo si sahihi au kimeondolewa.');
+        ? 'Taarifa za mwaliko hazijaweza kupatikana kwa sasa. Tafadhali jaribu tena.'
+        : 'Mwaliko huu haupo au kiungo chake si sahihi. Tafadhali wasiliana na mwenyeji.');
       return;
     }
     // Design ya ziada (anwani, crop ya cover, kichwa cha ujumbe na muziki)
     // inasomwa kwa RPC ndogo tofauti ili tusibadilishe RPC ya zamani ya RSVP.
-    let publicDesign = null;
-    try{
-      const designResponse = await invitationWithTimeout(sb.rpc('get_public_invitation_design_by_card',{p_card_id:token}), 'Kupata muundo wa mwaliko', 10000);
-      if(!designResponse.error) publicDesign = designResponse.data || null;
-      else console.warn('Public invitation design:',designResponse.error.message);
-    }catch(designError){console.warn('Public invitation design:',designError);}
+    // Muundo wa ziada (cover crop/anwani/muziki) haupaswi kusimamisha mwaliko.
+    // Tunauomba kwa nyuma; taarifa kuu zitaonyeshwa mara tu RPC ya kadi ikirudi.
+    const publicDesignPromise = invitationWithTimeout(
+      sb.rpc('get_public_invitation_design_by_card',{p_card_id:token}),
+      'Kupata muundo wa mwaliko', 15000
+    ).then(response=>{
+      if(response.error) throw response.error;
+      return response.data || null;
+    }).catch(error=>{console.warn('Public invitation design haijapatikana:',error);return null;});
 
     // RPC inaweza kurudisha muundo wa zamani uliokuwa nested (guest/event)
     // au muundo tambarare wa get_invitation_by_card. Normalize zote mbili hapa.
@@ -1394,10 +1398,6 @@
       story: result.story, program: result.program, dress_code: result.dress_code,
       hosts: result.hosts, providers: result.providers, gift: result.gift
     };
-    if(publicDesign && typeof publicDesign === 'object'){
-      Object.assign(eventData, publicDesign);
-      Object.assign(flatContent, publicDesign);
-    }
     // Muundo wa RPC mpya hutuma baadhi ya sehemu za design katika root.
     // Ziunganishe kwenye content kwa sababu renderContentSections hutumia content.
     eventData.content = {
@@ -1532,7 +1532,25 @@
       renderWelcome(eventData, content);
       renderVenuePhotos(eventData, content);
       currentCoupleContactPhone = eventData.contact_phone || '';
-      loadInvitationMusic(token, publicDesign?.music_tracks);
+
+      // Muundo na muziki hupakiwa baada ya taarifa kuu kuonekana. Hitilafu yake
+      // haiwezi tena kuzuia jina, tarehe, eneo au cover ya msingi kuonyeshwa.
+      publicDesignPromise.then(design=>{
+        if(design && typeof design === 'object' && Object.keys(design).length){
+          Object.assign(eventData, design);
+          const updatedContent={...(eventData.content && typeof eventData.content==='object'?eventData.content:{}),...design};
+          eventData.content=updatedContent;
+          lastContent=updatedContent;
+          renderContentSections(updatedContent);
+          renderCover(eventData, updatedContent);
+          const updatedAddress=pickLang(eventData.venue_address || updatedContent.venue_address,currentLang);
+          if(venueAddressEl){venueAddressEl.textContent=updatedAddress||'';venueAddressEl.style.display=updatedAddress?'':'';}
+          if(Array.isArray(design.music_tracks)) loadInvitationMusic(token,design.music_tracks);
+          else loadInvitationMusic(token,null);
+        }else{
+          loadInvitationMusic(token,null);
+        }
+      });
     } else {
       renderContentSections(null);
     }
@@ -1540,7 +1558,7 @@
     // ---- Onyesha ukurasa, ficha loader baada ya muda wa kutosha wa kusoma/kuvutiwa ----
     // Hata kama data imepatikana upesi, loader inabaki angalau MIN_LOAD_MS kabla
     // ya kuanza kufifia - hii inazuia mualiko "kuruka" haraka mno mbele ya mgeni.
-    const MIN_LOAD_MS = 3200;
+    const MIN_LOAD_MS = 0;
     const elapsed = Date.now() - loadStartTs;
     const remaining = Math.max(0, MIN_LOAD_MS - elapsed);
     const barFill = document.getElementById('loadBarFill');
@@ -1559,7 +1577,7 @@
   function startInvitationLoad(){
     loadInvitation().catch(error=>{
       console.error('Hitilafu isiyotarajiwa wakati wa kupakia mwaliko:',error);
-      showLoadError('Mwaliko umeshindwa kupakia taarifa kwa sasa. Tafadhali fungua tena kiungo baada ya muda mfupi.');
+      showLoadError('Taarifa za mwaliko hazijaweza kuonyeshwa kwa sasa. Tafadhali jaribu tena au wasiliana na mwenyeji.');
     });
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',startInvitationLoad,{once:true});
