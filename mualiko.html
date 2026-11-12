@@ -1343,51 +1343,117 @@
   let currentGuestCardId = null;      // (bado inatunzwa - inaweza kutumika baadaye)
   let currentCoupleContactPhone = ''; // events.contact_phone - lengwa la "Ujumbe wa Shukrani" kupitia WhatsApp
 
-  // ---------- EVENT MUSIC PLAYER: PLAY/PAUSE + MUTE ----------
+  // ---------- EVENT MUSIC PLAYER: PLAY/PAUSE + MUTE + SHUFFLE ----------
   let invitationMusicReady = false;
   let invitationMusicMuted = false;
+  let invitationMusicTracks = [];
+  let invitationMusicPlayed = [];
+  let invitationMusicCurrentIndex = -1;
+
+  const musicIcons = {
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor" stroke="none"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor" stroke="none"/></svg>',
+    volume: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 9a5 5 0 0 1 0 6m2-8a8 8 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    muted: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m17 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    shuffle: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M4 4l5 5m4 4 8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+
+  function setMusicIcon(button, icon, title) {
+    if (!button) return;
+    button.innerHTML = musicIcons[icon];
+    button.title = title;
+    button.setAttribute('aria-label', title);
+  }
+
   function syncMusicButtons(){
     const player=document.getElementById('invitationMusicPlayer');
     const playBtn=document.getElementById('invitationMusicToggle');
     const muteBtn=document.getElementById('invitationMusicMute');
     if(!player)return;
-    if(playBtn){
-      playBtn.textContent=player.paused?'▶':'Ⅱ';
-      playBtn.title=player.paused?'Play music':'Pause music';
-      playBtn.setAttribute('aria-label',player.paused?'Play music':'Pause music');
-      playBtn.classList.toggle('is-playing',!player.paused);
-    }
-    if(muteBtn){
-      muteBtn.textContent=player.muted?'🔇':'🔊';
-      muteBtn.title=player.muted?'Unmute music':'Mute music';
-      muteBtn.setAttribute('aria-label',player.muted?'Unmute music':'Mute music');
-      muteBtn.classList.toggle('is-muted',player.muted);
+    setMusicIcon(playBtn, player.paused ? 'play' : 'pause', player.paused ? 'Play music' : 'Pause music');
+    setMusicIcon(muteBtn, player.muted ? 'muted' : 'volume', player.muted ? 'Unmute music' : 'Mute music');
+    if(playBtn) playBtn.classList.toggle('is-playing',!player.paused);
+    if(muteBtn) muteBtn.classList.toggle('is-muted',player.muted);
+  }
+
+  function getMusicTrackUrl(track) {
+    if (typeof track === 'string') return track;
+    return track?.url || track?.publicUrl || track?.audio_url || track?.file_url || '';
+  }
+
+  function markCurrentMusicPlayed() {
+    if (invitationMusicCurrentIndex >= 0 && !invitationMusicPlayed.includes(invitationMusicCurrentIndex)) {
+      invitationMusicPlayed.push(invitationMusicCurrentIndex);
     }
   }
+
+  async function playInvitationTrack(index, shouldPlay = true) {
+    const player = document.getElementById('invitationMusicPlayer');
+    const track = invitationMusicTracks[index];
+    const url = getMusicTrackUrl(track);
+    if (!player || !url) return;
+    invitationMusicCurrentIndex = index;
+    markCurrentMusicPlayed();
+    player.src = url;
+    player.loop = false;
+    player.volume = 0.78;
+    player.muted = invitationMusicMuted;
+    syncMusicButtons();
+    if (shouldPlay) {
+      try {
+        await player.play();
+        invitationMusicReady = true;
+      } catch (e) {
+        invitationMusicReady = false;
+        console.warn('Browser imezuia kuanza muziki:', e);
+      }
+    }
+    syncMusicButtons();
+  }
+
+  function getNextMusicIndex() {
+    const total = invitationMusicTracks.length;
+    if (!total) return -1;
+    if (total === 1) return 0;
+
+    // Hakuna kurudia wimbo mpaka nyimbo zote zilizowekwa zisikilizwe.
+    let remaining = invitationMusicTracks
+      .map((_, i) => i)
+      .filter(i => i !== invitationMusicCurrentIndex && !invitationMusicPlayed.includes(i));
+
+    if (!remaining.length) {
+      invitationMusicPlayed = invitationMusicCurrentIndex >= 0 ? [invitationMusicCurrentIndex] : [];
+      remaining = invitationMusicTracks.map((_, i) => i).filter(i => i !== invitationMusicCurrentIndex);
+    }
+    return remaining[Math.floor(Math.random() * remaining.length)];
+  }
+
+  async function playNextInvitationTrack() {
+    const nextIndex = getNextMusicIndex();
+    if (nextIndex < 0) return;
+    await playInvitationTrack(nextIndex, true);
+  }
+
   async function loadInvitationMusic(cardToken, suppliedTracks){
     const controls=document.getElementById('invitationMusicControls');
     const player=document.getElementById('invitationMusicPlayer');
     if(!controls || !player) return;
     try{
-      let tracks=Array.isArray(suppliedTracks)?suppliedTracks:null;
+      let tracks=Array.isArray(suppliedTracks)&&suppliedTracks.length?suppliedTracks:null;
       if(!tracks){
         const {data,error}=await sb.rpc('get_invitation_music_by_card',{p_card_id:cardToken});
         tracks=Array.isArray(data)?data:(Array.isArray(data?.tracks)?data.tracks:[]);
         if(error) throw error;
       }
-      if(!tracks.length){controls.style.display='none';return;}
-      const chosen=tracks[Math.floor(Math.random()*tracks.length)];
-      if(!chosen?.url){controls.style.display='none';return;}
-      player.src=chosen.url; player.loop=true; player.volume=0.78; player.muted=false;
+      invitationMusicTracks = (Array.isArray(tracks) ? tracks : []).filter(track => !!getMusicTrackUrl(track));
+      invitationMusicPlayed = [];
+      invitationMusicCurrentIndex = -1;
+      if(!invitationMusicTracks.length){controls.style.display='none';return;}
       controls.style.display='flex';
-      syncMusicButtons();
-      const attempt=player.play();
-      if(attempt && typeof attempt.then==='function'){
-        attempt.then(()=>{invitationMusicReady=true;syncMusicButtons();})
-          .catch(()=>{invitationMusicReady=false;syncMusicButtons();});
-      }
+      await playInvitationTrack(Math.floor(Math.random()*invitationMusicTracks.length), true);
     }catch(e){console.warn('Muziki wa event haukupatikana:',e);controls.style.display='none';}
   }
+
   async function toggleInvitationMusic(){
     const player=document.getElementById('invitationMusicPlayer');
     if(!player?.src)return;
@@ -1406,13 +1472,24 @@
     invitationMusicMuted=player.muted;
     syncMusicButtons();
   }
+
   document.addEventListener('click',(event)=>{
     if(event.target?.closest?.('#invitationMusicToggle')){
       event.preventDefault();toggleInvitationMusic();
     }else if(event.target?.closest?.('#invitationMusicMute')){
       event.preventDefault();toggleInvitationMusicMute();
+    }else if(event.target?.closest?.('#invitationMusicShuffle')){
+      event.preventDefault();playNextInvitationTrack();
     }
   });
+  document.addEventListener('ended',()=>{
+    // Wimbo ukiisha, unaofuata unaanza moja kwa moja bila kumsubiri mgeni.
+    if(invitationMusicTracks.length > 1) playNextInvitationTrack();
+    else {
+      const player=document.getElementById('invitationMusicPlayer');
+      if(player?.src){player.currentTime=0;player.play().catch(()=>{});}
+    }
+  },true);
   document.addEventListener('play',syncMusicButtons,true);
   document.addEventListener('pause',syncMusicButtons,true);
   document.addEventListener('volumechange',syncMusicButtons,true);
@@ -1422,8 +1499,9 @@
     const player=document.getElementById('invitationMusicPlayer');
     if(!player?.src || !player.paused) return;
     player.muted=false;
+    invitationMusicMuted=false;
     player.play().then(()=>{
-      invitationMusicReady=true; invitationMusicMuted=false; syncMusicButtons();
+      invitationMusicReady=true; syncMusicButtons();
       document.removeEventListener('pointerdown',startMusicOnFirstGesture);
     }).catch(()=>{});
   },{passive:true});
@@ -1777,16 +1855,18 @@
 
 <!-- MUSIC PLAYER: controls ziko kwenye ukurasa mkuu ili JS ya mualiko izifikie -->
 <audio id="invitationMusicPlayer" preload="auto" playsinline></audio>
-<div id="invitationMusicControls" aria-label="Music controls">
-  <button id="invitationMusicToggle" type="button" aria-label="Play music" title="Play music">▶</button>
-  <button id="invitationMusicMute" type="button" aria-label="Mute music" title="Mute music">🔊</button>
+<div id="invitationMusicControls" aria-label="Music controls" role="group">
+  <button id="invitationMusicToggle" type="button" aria-label="Play music" title="Play music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor" stroke="none"/></svg></button>
+  <button id="invitationMusicMute" type="button" aria-label="Mute music" title="Mute music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 9a5 5 0 0 1 0 6m2-8a8 8 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  <button id="invitationMusicShuffle" type="button" aria-label="Change song" title="Change song / Shuffle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M4 4l5 5m4 4 8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 </div>
 <style>
-  #invitationMusicControls{position:fixed;right:14px;bottom:18px;z-index:2147482000;display:none;align-items:center;gap:8px;}
-  #invitationMusicControls button{width:46px;height:46px;border:1px solid rgba(255,255,255,.75);border-radius:50%;background:linear-gradient(145deg,#c79a3e,#8b6420);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.24);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;font-family:Arial,sans-serif;}
+  #invitationMusicControls{position:fixed;left:14px;top:14px;z-index:2147482000;display:none;align-items:center;gap:7px;padding:4px 7px;background:rgba(23,10,32,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(199,154,62,.4);border-radius:999px;box-shadow:0 5px 18px rgba(0,0,0,.16);}
+  #invitationMusicControls button{width:38px;height:38px;border:1px solid rgba(255,255,255,.55);border-radius:50%;background:linear-gradient(145deg,#c79a3e,#8b6420);color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:9px;}
+  #invitationMusicControls button svg{width:100%;height:100%;display:block;overflow:visible;}
   #invitationMusicControls button:focus-visible{outline:3px solid var(--gold-light);outline-offset:3px}
   #invitationMusicControls button.is-muted{opacity:.72}
-  @media(max-width:480px){#invitationMusicControls{right:12px;bottom:14px;gap:7px}#invitationMusicControls button{width:43px;height:43px}}
+  @media(max-width:480px){#invitationMusicControls{left:10px;top:12px;gap:6px;padding:3px 6px}#invitationMusicControls button{width:36px;height:36px;padding:8px}}
 </style>
 
 <script>
