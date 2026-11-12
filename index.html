@@ -2106,6 +2106,11 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
               <div class="card-title"><i data-lucide="users" class="icon" style="color:#16A34A"></i> Wazazi wa Harusi</div>
               <button class="btn btn-outline btn-sm" onclick="addHostRow()">+ Ongeza</button>
             </div>
+            <div class="form-group" style="margin:0 0 12px;">
+              <label for="invHostsHeading">Kichwa cha Sehemu ya Wazazi (hiari)</label>
+              <input type="text" id="invHostsHeading" placeholder="Mfano: Wazazi wa Bibi na Bwana Harusi">
+              <small style="color:var(--gray-400);">Ukiacha wazi, kichwa hiki hakitaonekana kwenye mwaliko.</small>
+            </div>
             <div id="hostsList" style="display:flex; flex-direction:column; gap:10px;"></div>
           </div>
 
@@ -8083,6 +8088,7 @@ async function loadInvitationDesign() {
 
   document.getElementById('dressColorsList').innerHTML = '';
   document.getElementById('programList').innerHTML = '';
+  document.getElementById('invHostsHeading').value = data?.hosts?.[0]?.heading || '';
   document.getElementById('hostsList').innerHTML = '';
   document.getElementById('providersList').innerHTML = '';
 
@@ -8317,7 +8323,10 @@ async function uploadInvitationMusic(){
       showToast('Wimbo unapakiwa moja kwa moja bila conversion.','info');
     }
     const path=`${ORG_OWNER_ID}/${eventId}/track_${Date.now()}.${ext}`;
-    const contentType=mime.split(';')[0]||'application/octet-stream';
+    // Hakikisha M4A/AAC zinahifadhiwa kwa MIME sahihi hata Safari ikirudisha file.type tupu.
+    const audioMimeByExt={mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',wav:'audio/wav',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/opus'};
+    const detectedMime=(file.type||'').split(';')[0].toLowerCase();
+    const contentType=(ext==='wav'?'audio/wav':(audioMimeByExt[ext]||detectedMime||mime.split(';')[0]||'application/octet-stream'));
     status.textContent=`Inapakia wimbo (${(blob.size/1024/1024).toFixed(2)} MB) kwenye Storage...`;
     const {error:upErr}=await sb.storage.from('invitation-music').upload(path,blob,{contentType,upsert:false});
     if(upErr)throw new Error('Storage: '+upErr.message);
@@ -8603,9 +8612,11 @@ function addHostRow(existing) {
   try { lucide.createIcons(); } catch(e) {}
 }
 function collectHosts() {
+  const heading = document.getElementById('invHostsHeading')?.value.trim() || '';
   return Array.from(document.querySelectorAll('#hostsList > div')).map(row => ({
     label: row.querySelector('.hs-label').value.trim(),
     name: row.querySelector('.hs-name').value.trim(),
+    heading
   })).filter(h => h.name);
 }
 
