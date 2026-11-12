@@ -1949,7 +1949,6 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
                     <span id="invCoverNamesYLabel" style="width:36px; text-align:center; font-size:12px;">0</span>
                     <button type="button" class="btn btn-outline btn-sm" onclick="adjustCoverPos('Names', 4)">+</button>
                   </div>
-                  <button type="button" class="btn btn-outline btn-sm" style="width:fit-content;margin-top:4px;" onclick="resetCoverPositions()"><i data-lucide="rotate-ccw" class="icon-inline" aria-hidden="true"></i> Rudisha Default</button>
                 </div>
                 <div style="flex-shrink:0;">
                   <div id="coverLivePreview" style="width:150px;aspect-ratio:3/4;border:1.5px solid #d8ae55;border-radius:4px;position:relative;overflow:hidden;background:linear-gradient(160deg,#3a1650,#170a20);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8.44px;padding-bottom:16.88px;">
@@ -1972,13 +1971,7 @@ body.dark-mode .dashboard-section-heading h2{color:#EEF3FC}
                   <div><label for="invCoverPhotoY" style="font-size:11px;">Juu / Chini</label><input id="invCoverPhotoY" type="range" min="0" max="100" value="50" oninput="updateCoverPhotoPreview()"></div>
                   <div style="grid-column:1/-1"><label for="invCoverPhotoZoom" style="font-size:11px;">Zoom</label><input id="invCoverPhotoZoom" type="range" min="100" max="220" value="100" step="1" oninput="updateCoverPhotoPreview()"></div>
                 </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-                  <button type="button" class="btn btn-outline btn-sm" onclick="nudgeCoverPhoto('y',-5)">↑ Pandisha</button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="nudgeCoverPhoto('y',5)">↓ Shusha</button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="nudgeCoverPhoto('x',-5)">← Kushoto</button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="nudgeCoverPhoto('x',5)">→ Kulia</button>
-                  <button type="button" class="btn btn-outline btn-sm" onclick="resetCoverPhotoPosition()">Rudisha picha</button>
-                </div>
+                <button type="button" class="btn btn-outline btn-sm" style="width:fit-content;margin-top:10px;" onclick="resetCoverPositions()"><i data-lucide="rotate-ccw" class="icon-inline" aria-hidden="true"></i> Rudisha Default</button>
               </div>
               <input type="hidden" id="invCoverMonogramY" value="0">
               <input type="hidden" id="invCoverNamesY" value="0">
@@ -8114,9 +8107,9 @@ async function saveInvitationDesign() {
     cover_names: document.getElementById('invCoverNames').value.trim(),
     cover_monogram: document.getElementById('invCoverMonogram').value.trim(),
     cover_photo_url: document.getElementById('invCoverPhotoUrl').value.trim(),
-    cover_photo_x: parseInt(document.getElementById('invCoverPhotoX').value,10) || 50,
-    cover_photo_y: parseInt(document.getElementById('invCoverPhotoY').value,10) || 50,
-    cover_photo_zoom: parseInt(document.getElementById('invCoverPhotoZoom').value,10) || 100,
+    cover_photo_x: Number(document.getElementById('invCoverPhotoX').value ?? 50),
+    cover_photo_y: Number(document.getElementById('invCoverPhotoY').value ?? 50),
+    cover_photo_zoom: Number(document.getElementById('invCoverPhotoZoom').value ?? 100),
     cover_monogram_y: parseInt(document.getElementById('invCoverMonogramY').value, 10) || 0,
     cover_names_y: parseInt(document.getElementById('invCoverNamesY').value, 10) || 0,
     hero_title: document.getElementById('invHeroTitle').value.trim(),
@@ -8150,7 +8143,6 @@ async function saveInvitationDesign() {
   }
 
   showToast('Digital Invitation na mipangilio ya Snap Cards vimehifadhiwa!', 'success');
-  loadInvitationDesign();
 }
 
 // ---------- DRESS CODE ROWS ----------
@@ -8195,14 +8187,6 @@ function updateCoverPhotoPreview(){
     else { el.style.backgroundPosition=`${x}% ${y}%`; el.style.backgroundSize=`${z*100}%`; }
   });
 }
-function nudgeCoverPhoto(axis,delta){
-  const id=axis==='x'?'invCoverPhotoX':'invCoverPhotoY';
-  const el=document.getElementById(id); el.value=Math.max(0,Math.min(100,Number(el.value)+delta)); updateCoverPhotoPreview();
-}
-function resetCoverPhotoPosition(){
-  document.getElementById('invCoverPhotoX').value=50; document.getElementById('invCoverPhotoY').value=50; document.getElementById('invCoverPhotoZoom').value=100; updateCoverPhotoPreview();
-}
-
 // ---------- MINI MUSIC STUDIO ----------
 let invitationMusicTracks = [];
 let musicSourceObjectUrl = null;
@@ -8218,36 +8202,64 @@ function updateMusicTrimLabel(){
 function previewMusicUpload(){
   const file=document.getElementById('invMusicFile').files?.[0];
   if(!file) return showToast('Chagua wimbo kwanza.','error');
+  if(!file.type.startsWith('audio/')) return showToast('Faili ulilochagua si audio inayotambulika.','error');
   if(musicSourceObjectUrl) URL.revokeObjectURL(musicSourceObjectUrl);
   musicSourceFile=file; musicSourceObjectUrl=URL.createObjectURL(file);
-  const audio=document.getElementById('invMusicPreview'); audio.src=musicSourceObjectUrl;
+  const audio=document.getElementById('invMusicPreview');
+  audio.pause(); audio.src=musicSourceObjectUrl; audio.load();
   audio.onloadedmetadata=()=>{
-    musicSourceDuration=audio.duration||0;
-    const slider=document.getElementById('invMusicTrimStart'); slider.max=Math.max(0,musicSourceDuration-1); slider.value=0;
+    musicSourceDuration=Number.isFinite(audio.duration)?audio.duration:0;
+    if(!musicSourceDuration) return showToast('Browser imeshindwa kusoma muda wa wimbo huu.','error');
+    const slider=document.getElementById('invMusicTrimStart');
+    slider.max=Math.max(0,musicSourceDuration-0.5); slider.value=0;
     document.getElementById('invMusicDurationLabel').textContent=`Muda: ${fmtMusicTime(musicSourceDuration)}`;
     document.getElementById('invMusicTrimWrap').style.display='block'; updateMusicTrimLabel();
-    audio.play().catch(()=>{});
+    audio.currentTime=0;
+    audio.play().catch(()=>showToast('Bonyeza Play kwenye player ili kusikiliza.','info'));
   };
+  audio.onerror=()=>showToast('Browser imeshindwa kufungua aina hii ya audio. Jaribu MP3, M4A au WAV.','error');
 }
 async function encodeMusicToOpus(file,startSeconds){
-  if(!window.AudioContext && !window.webkitAudioContext) throw new Error('Browser hii haitumii audio conversion. Tumia Chrome/Edge ya kisasa.');
-  if(!window.MediaRecorder) throw new Error('MediaRecorder haipatikani kwenye browser hii.');
-  const Ctx=window.AudioContext||window.webkitAudioContext; const ctx=new Ctx();
-  const buffer=await ctx.decodeAudioData(await file.arrayBuffer());
-  const start=Math.max(0,Math.min(Number(startSeconds)||0,buffer.duration-0.1));
-  const mime=['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
-  if(!mime) { await ctx.close(); throw new Error('Browser haiwezi kutoa Opus/WebM. Tumia Chrome au Edge.'); }
-  const dest=ctx.createMediaStreamDestination(); const source=ctx.createBufferSource(); source.buffer=buffer; source.connect(dest);
-  const chunks=[]; const recorder=new MediaRecorder(dest.stream,{mimeType:mime,audioBitsPerSecond:48000});
-  const finished=new Promise((resolve,reject)=>{
-    recorder.ondataavailable=e=>{if(e.data?.size) chunks.push(e.data);};
-    recorder.onerror=()=>reject(new Error('Imeshindikana kubana sauti.'));
-    recorder.onstop=()=>resolve(new Blob(chunks,{type:mime}));
-  });
-  recorder.start(1000); source.start(0,start);
-  const timer=setTimeout(()=>{try{recorder.stop();}catch(e){}},Math.max(1000,(buffer.duration-start)*1000+500));
-  const blob=await finished; clearTimeout(timer); await ctx.close();
-  return {blob,duration:buffer.duration-start,mime};
+  const Ctx=window.AudioContext||window.webkitAudioContext;
+  if(!Ctx) throw new Error('Browser hii haitumii AudioContext. Tumia Chrome au Edge iliyosasishwa.');
+  if(!window.MediaRecorder || typeof MediaRecorder.isTypeSupported!=='function') throw new Error('Browser hii haitumii MediaRecorder ya kubana sauti. Tumia Chrome au Edge iliyosasishwa.');
+  const mime=['audio/webm;codecs=opus','audio/ogg;codecs=opus'].find(type=>MediaRecorder.isTypeSupported(type));
+  if(!mime) throw new Error('Browser haijaruhusu Opus/WebM. Tumia Chrome au Edge ya kisasa.');
+
+  const ctx=new Ctx();
+  let source=null, recorder=null, watchdog=null;
+  try{
+    const arrayBuffer=await file.arrayBuffer();
+    const buffer=await ctx.decodeAudioData(arrayBuffer.slice(0));
+    if(!buffer || !buffer.duration || !Number.isFinite(buffer.duration)) throw new Error('Imeshindikana kusoma audio. Jaribu MP3, M4A au WAV.');
+    const start=Math.max(0,Math.min(Number(startSeconds)||0,Math.max(0,buffer.duration-0.1)));
+    if(ctx.state==='suspended') await ctx.resume();
+
+    const dest=ctx.createMediaStreamDestination();
+    try{dest.channelCount=1;dest.channelCountMode='explicit';}catch(e){}
+    source=ctx.createBufferSource(); source.buffer=buffer; source.connect(dest);
+    const chunks=[];
+    recorder=new MediaRecorder(dest.stream,{mimeType:mime,audioBitsPerSecond:32000});
+    const finished=new Promise((resolve,reject)=>{
+      recorder.ondataavailable=event=>{if(event.data && event.data.size) chunks.push(event.data);};
+      recorder.onerror=event=>reject(event.error || new Error('Kosa limetokea wakati wa kubana audio.'));
+      recorder.onstop=()=>resolve(new Blob(chunks,{type:mime}));
+    });
+    const stopRecorder=()=>{if(recorder && recorder.state==='recording'){try{recorder.stop();}catch(e){}}};
+    source.onended=()=>{ if(watchdog) clearTimeout(watchdog); setTimeout(stopRecorder,150); };
+    recorder.start(250);
+    source.start(0,start);
+    watchdog=setTimeout(stopRecorder,Math.max(3000,(buffer.duration-start)*1000+2500));
+    const blob=await finished;
+    if(watchdog) clearTimeout(watchdog);
+    if(!blob || !blob.size) throw new Error('Conversion imetoa faili tupu. Jaribu tena au tumia audio nyingine.');
+    return {blob,duration:buffer.duration-start,mime};
+  }finally{
+    if(watchdog) clearTimeout(watchdog);
+    try{if(source) source.disconnect();}catch(e){}
+    try{if(recorder && recorder.state==='recording') recorder.stop();}catch(e){}
+    try{await ctx.close();}catch(e){}
+  }
 }
 async function uploadInvitationMusic(){
   const file=document.getElementById('invMusicFile').files?.[0];
@@ -8255,25 +8267,37 @@ async function uploadInvitationMusic(){
   if(!eventId) return showToast('Chagua event kwanza.','error');
   if(!file) return showToast('Chagua wimbo kwanza.','error');
   if(invitationMusicTracks.length>=5) return showToast('Kikomo ni nyimbo tano kwa event.','error');
-  const btn=document.getElementById('invMusicUploadBtn'); btn.disabled=true;
+  const btn=document.getElementById('invMusicUploadBtn');
   const status=document.getElementById('invMusicConvertStatus');
+  btn.disabled=true; status.style.display='block'; status.style.color='var(--blue)';
   try{
-    status.textContent='Inasoma na kubana wimbo kuwa Opus 48 kbps...';
     const start=Number(document.getElementById('invMusicTrimStart').value||0);
+    status.textContent='Hatua 1/2: Inabadilisha na kubana wimbo kuwa Opus mono 32 kbps...';
+    showToast('Conversion ya wimbo imeanza. Tafadhali subiri.','info');
     const {blob,duration,mime}=await encodeMusicToOpus(file,start);
     const ext=mime.includes('ogg')?'ogg':'webm';
+    const contentType=ext==='ogg'?'audio/ogg':'audio/webm';
     const path=`${ORG_OWNER_ID}/${eventId}/track_${Date.now()}.${ext}`;
-    status.textContent=`Conversion imekamilika: ${(file.size/1024/1024).toFixed(2)} MB → ${(blob.size/1024/1024).toFixed(2)} MB. Inapakia...`;
-    const {error:upErr}=await sb.storage.from('invitation-music').upload(path,blob,{contentType:ext==='ogg'?'audio/ogg':'audio/webm',upsert:false});
-    if(upErr) throw upErr;
+    status.textContent=`Hatua 2/2: Conversion imekamilika (${(file.size/1024/1024).toFixed(2)} MB → ${(blob.size/1024/1024).toFixed(2)} MB). Inapakia Storage...`;
+    showToast('Conversion imekamilika; sasa inapakia wimbo kwenye Storage.','info');
+    const {error:upErr}=await sb.storage.from('invitation-music').upload(path,blob,{contentType,upsert:false});
+    if(upErr) throw new Error('Storage: '+upErr.message);
     const {data:{publicUrl}}=sb.storage.from('invitation-music').getPublicUrl(path);
+    if(!publicUrl) throw new Error('Supabase haikurudisha public URL ya wimbo.');
     invitationMusicTracks.push({url:publicUrl,name:file.name.replace(/\.[^.]+$/,''),duration:Math.round(duration),size:blob.size,storage_path:path});
     renderInvitationMusicTracks();
-    status.textContent=`Imepakiwa. Ukubwa umepungua kwa ${Math.max(0,Math.round((1-blob.size/file.size)*100))}%. Bonyeza Hifadhi Mipangilio kuhifadhi orodha ya nyimbo.`;
-    document.getElementById('invMusicFile').value=''; document.getElementById('invMusicTrimWrap').style.display='none';
-    showToast('Wimbo umebadilishwa na kupakiwa. Hifadhi mipangilio.','success');
-  }catch(e){status.textContent='';showToast('Kosa la muziki: '+(e.message||e),'error');}
-  finally{btn.disabled=false;}
+    const reduction=Math.max(0,Math.round((1-blob.size/file.size)*100));
+    status.style.color='var(--success)';
+    status.textContent=`Imekamilika! Wimbo umepakiwa. Ukubwa umepungua kwa ${reduction}%. Sasa bonyeza Hifadhi Digital Invitation ili wageni wapate nyimbo.`;
+    document.getElementById('invMusicFile').value='';
+    document.getElementById('invMusicTrimWrap').style.display='none';
+    const preview=document.getElementById('invMusicPreview'); preview.pause(); preview.removeAttribute('src'); preview.load();
+    showToast('Wimbo umeconvert na kupakiwa kikamilifu. Hifadhi Digital Invitation.','success');
+  }catch(e){
+    status.style.color='var(--danger)';
+    status.textContent='Imeshindikana: '+(e.message||String(e));
+    showToast('Kosa la muziki: '+(e.message||e),'error');
+  }finally{btn.disabled=false;}
 }
 function renderInvitationMusicTracks(){
   const wrap=document.getElementById('invMusicTrackList'); if(!wrap)return;
@@ -8398,11 +8422,21 @@ function adjustCoverPos(field, delta) {
 }
 
 function resetCoverPositions() {
+  // Reset moja kwa moja kwa mpangilio wa awali wa maandishi na picha.
   ['Monogram', 'Names'].forEach(field => {
-    document.getElementById(`invCover${field}Y`).value = 0;
-    document.getElementById(`invCover${field}YLabel`).textContent = '0';
+    const input = document.getElementById(`invCover${field}Y`);
+    const label = document.getElementById(`invCover${field}YLabel`);
+    if (input) input.value = 0;
+    if (label) label.textContent = '0';
   });
+  const defaults = { invCoverPhotoX: 50, invCoverPhotoY: 50, invCoverPhotoZoom: 100 };
+  Object.entries(defaults).forEach(([id, value]) => {
+    const input = document.getElementById(id);
+    if (input) input.value = value;
+  });
+  updateCoverPhotoPreview();
   renderCoverLivePreview();
+  showToast('Mpangilio wa cover umerudishwa kwenye default.', 'success');
 }
 
 function renderCoverLivePreview() {
