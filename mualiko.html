@@ -134,7 +134,7 @@
     position:absolute; inset:0; z-index:0; display:none;
   }
   .cover-frame.has-cover-photo .cover-photo-wrap{ display:block; }
-  .cover-photo{width:100%; height:100%; object-fit:cover; display:block;}
+  .cover-photo{width:100%; height:100%; object-fit:cover; object-position:50% 50%; display:block; transform-origin:center center;}
   .cover-frame.has-cover-photo::after{
     content:''; position:absolute; inset:0; z-index:1;
     background:linear-gradient(180deg, rgba(23,10,32,0.28), rgba(23,10,32,0.55) 55%, rgba(23,10,32,0.8));
@@ -629,8 +629,9 @@
       <div class="venue-photo" id="venuePhoto1"><span class="venue-photo-label">Picha ya Ukumbi 1</span></div>
       <div class="venue-photo" id="venuePhoto2"><span class="venue-photo-label">Picha ya Ukumbi 2</span></div>
     </div>
-    <h2 class="reveal" style="font-size:22px; margin-top:18px;" id="venueName"></h2>
-    <p class="reveal" id="venueTime"></p>
+    <h2 class="reveal" style="font-size:25px;line-height:1.15;margin-top:18px;" id="venueName"></h2>
+    <p class="reveal" id="venueAddress" style="font-size:16px;line-height:1.35;margin:5px auto 3px;max-width:310px;"></p>
+    <p class="reveal" id="venueTime" style="font-size:12px;line-height:1.3;margin-top:3px;"></p>
     <a href="#" class="map-btn reveal" id="mapBtn" rel="noopener">Fungua Ramani</a>
   </section>
 
@@ -960,6 +961,11 @@
     if(photoUrl){
       const img = document.getElementById('coverPhoto');
       img.src = photoUrl;
+      const photoX = Number(eventData?.cover_photo_x ?? content?.cover_photo_x ?? 50);
+      const photoY = Number(eventData?.cover_photo_y ?? content?.cover_photo_y ?? 50);
+      const photoZoom = Number(eventData?.cover_photo_zoom ?? content?.cover_photo_zoom ?? 100);
+      img.style.objectPosition = `${photoX}% ${photoY}%`;
+      img.style.transform = `scale(${Math.max(1,photoZoom)/100})`;
       document.getElementById('coverFrame').classList.add('has-cover-photo');
     }
 
@@ -1174,6 +1180,8 @@
     setText('providersEyebrow', t.providersEyebrow);
     setText('giftEyebrow', t.giftEyebrow);
     setText('noteEyebrow', t.noteEyebrow);
+    const customNoteHeading = pickLang(content?.note_heading, lang);
+    if(customNoteHeading) setText('noteEyebrow', customNoteHeading);
     setText('noteSent', t.noteSent);
     setText('thankyouScript', t.thankyouScript);
     setText('thankyouIntro', t.thankyouIntro);
@@ -1263,6 +1271,53 @@
   let currentGuestCardId = null;      // (bado inatunzwa - inaweza kutumika baadaye)
   let currentCoupleContactPhone = ''; // events.contact_phone - lengwa la "Ujumbe wa Shukrani" kupitia WhatsApp
 
+  // ---------- EVENT MUSIC PLAYER ----------
+  let invitationMusicReady = false;
+  let invitationMusicMuted = false;
+  async function loadInvitationMusic(cardToken, suppliedTracks){
+    const button=document.getElementById('invitationMusicToggle');
+    const player=document.getElementById('invitationMusicPlayer');
+    if(!button || !player) return;
+    try{
+      let tracks=Array.isArray(suppliedTracks)?suppliedTracks:null;
+      if(!tracks){ const {data,error}=await sb.rpc('get_invitation_music_by_card',{p_card_id:cardToken}); tracks=Array.isArray(data)?data:(Array.isArray(data?.tracks)?data.tracks:[]); if(error) throw error; }
+      if(!tracks.length){ button.style.display='none'; return; }
+      const chosen=tracks[Math.floor(Math.random()*tracks.length)];
+      if(!chosen?.url){button.style.display='none';return;}
+      player.src=chosen.url; player.loop=true; player.volume=0.78; player.muted=false;
+      button.style.display='flex';
+      const attempt=player.play();
+      if(attempt && typeof attempt.then==='function'){
+        attempt.then(()=>{invitationMusicReady=true;button.classList.add('is-playing');button.setAttribute('aria-pressed','true');})
+          .catch(()=>{invitationMusicReady=false;button.classList.remove('is-playing');});
+      }
+    }catch(e){console.warn('Muziki wa event haukupatikana:',e);button.style.display='none';}
+  }
+  async function toggleInvitationMusic(){
+    const player=document.getElementById('invitationMusicPlayer');
+    const button=document.getElementById('invitationMusicToggle');
+    if(!player?.src)return;
+    if(player.paused){
+      player.muted=false;
+      try{await player.play();invitationMusicReady=true;invitationMusicMuted=false;button.classList.add('is-playing');button.setAttribute('aria-pressed','true');}
+      catch(e){console.warn('Browser imezuia autoplay:',e);}
+    }else{
+      player.muted=!player.muted; invitationMusicMuted=player.muted;
+      button.classList.toggle('is-playing',!player.muted);
+      button.setAttribute('aria-pressed',String(!player.muted));
+      if(player.muted) button.style.opacity='.65'; else button.style.opacity='1';
+    }
+  }
+  document.getElementById('invitationMusicToggle')?.addEventListener('click',toggleInvitationMusic);
+  // Browser zikizuia autoplay, touch/click ya kwanza kwenye ukurasa huanzisha muziki.
+  document.addEventListener('pointerdown',(event)=>{
+    if(event.target?.closest?.('#invitationMusicToggle')) return;
+    const player=document.getElementById('invitationMusicPlayer');
+    if(player?.src && player.paused) player.play().then(()=>{
+      const b=document.getElementById('invitationMusicToggle'); if(b){b.classList.add('is-playing');b.style.opacity='1';b.setAttribute('aria-pressed','true');}
+    }).catch(()=>{});
+  },{once:true,passive:true});
+
   async function loadInvitation(){
     const loadStartTs = Date.now(); // hutumika kuhakikisha loader haitoweki upesi mno
     const params = new URLSearchParams(window.location.search);
@@ -1289,6 +1344,14 @@
         : 'Mualiko huu haukupatikana. Huenda kiungo si sahihi au kimeondolewa.');
       return;
     }
+    // Design ya ziada (anwani, crop ya cover, kichwa cha ujumbe na muziki)
+    // inasomwa kwa RPC ndogo tofauti ili tusibadilishe RPC ya zamani ya RSVP.
+    let publicDesign = null;
+    try{
+      const designResponse = await sb.rpc('get_public_invitation_design_by_card',{p_card_id:token});
+      if(!designResponse.error) publicDesign = designResponse.data || null;
+      else console.warn('Public invitation design:',designResponse.error.message);
+    }catch(designError){console.warn('Public invitation design:',designError);}
 
     // RPC inaweza kurudisha muundo wa zamani uliokuwa nested (guest/event)
     // au muundo tambarare wa get_invitation_by_card. Normalize zote mbili hapa.
@@ -1305,21 +1368,30 @@
       user_id: result.user_id, contact_phone: result.contact_phone,
       show_vip_badge: result.show_vip_badge, show_group_label: result.show_group_label,
       cover_names: result.cover_names, cover_monogram: result.cover_monogram,
-      cover_photo_url: result.cover_photo_url, cover_monogram_y: result.cover_monogram_y,
+      cover_photo_url: result.cover_photo_url, cover_photo_x: result.cover_photo_x, cover_photo_y: result.cover_photo_y, cover_photo_zoom: result.cover_photo_zoom, cover_monogram_y: result.cover_monogram_y,
       cover_names_y: result.cover_names_y, cover_taphint_y: result.cover_taphint_y,
       hero_title: result.hero_title, hero_verse: result.hero_verse,
       welcome_message: result.welcome_message, date_language: result.date_language,
       ui_language_mode: result.ui_language_mode, venue_photo_1: result.venue_photo_1,
-      venue_photo_2: result.venue_photo_2, story_heading: result.story_heading,
+      venue_photo_2: result.venue_photo_2, venue_address: result.venue_address, note_heading: result.note_heading, story_heading: result.story_heading,
       story: result.story, program: result.program, dress_code: result.dress_code,
       hosts: result.hosts, providers: result.providers, gift: result.gift
     };
+    if(publicDesign && typeof publicDesign === 'object'){
+      Object.assign(eventData, publicDesign);
+      Object.assign(flatContent, publicDesign);
+    }
     // Muundo wa RPC mpya hutuma baadhi ya sehemu za design katika root.
     // Ziunganishe kwenye content kwa sababu renderContentSections hutumia content.
     eventData.content = {
       ...(eventData.content && typeof eventData.content === 'object' ? eventData.content : {}),
       ...(result.story !== undefined ? {story: result.story} : {}),
       ...(result.story_heading !== undefined ? {story_heading: result.story_heading} : {}),
+      ...(result.venue_address !== undefined ? {venue_address: result.venue_address} : {}),
+      ...(result.note_heading !== undefined ? {note_heading: result.note_heading} : {}),
+      ...(result.cover_photo_x !== undefined ? {cover_photo_x: result.cover_photo_x} : {}),
+      ...(result.cover_photo_y !== undefined ? {cover_photo_y: result.cover_photo_y} : {}),
+      ...(result.cover_photo_zoom !== undefined ? {cover_photo_zoom: result.cover_photo_zoom} : {}),
       ...(eventData.story_heading !== undefined ? {story_heading: eventData.story_heading} : {}),
       ...(result.program !== undefined ? {program: result.program} : {}),
       ...(result.dress_code !== undefined ? {dress_code: result.dress_code} : {}),
@@ -1410,6 +1482,9 @@
       if(eventData.venue){
         document.getElementById('venueName').textContent = pickLang(eventData.venue, currentLang);
       }
+      const venueAddress = pickLang(eventData.venue_address || content?.venue_address, currentLang);
+      const venueAddressEl = document.getElementById('venueAddress');
+      if(venueAddressEl){ venueAddressEl.textContent = venueAddress || ''; venueAddressEl.style.display = venueAddress ? '' : 'none'; }
       const mapBtn = document.getElementById('mapBtn');
       // Pata coordinates kwa RPC salama kabla mgeni hajabonyeza.
       // Kitufe chenyewe kinaelekeza moja kwa moja Google Maps - hakuna location.html.
@@ -1440,6 +1515,7 @@
       renderWelcome(eventData, content);
       renderVenuePhotos(eventData, content);
       currentCoupleContactPhone = eventData.contact_phone || '';
+      loadInvitationMusic(token, publicDesign?.music_tracks);
     } else {
       renderContentSections(null);
     }
@@ -2410,6 +2486,16 @@
 <\/script>
 
 </div>
+  <audio id="invitationMusicPlayer" preload="auto" playsinline></audio>
+  <button id="invitationMusicToggle" type="button" aria-label="Zima au washa muziki" title="Zima/Washa muziki" style="position:fixed;right:18px;bottom:22px;z-index:9999;width:52px;height:52px;border:1px solid rgba(255,255,255,.55);border-radius:50%;background:linear-gradient(145deg,#c79a3e,#8b6420);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);display:none;align-items:center;justify-content:center;cursor:pointer;font-size:22px;">
+    <span id="invitationMusicIcon" style="display:inline-block;line-height:1;">♫</span>
+  </button>
+  <style>
+    #invitationMusicToggle.is-playing #invitationMusicIcon{animation:invMusicSpin 3.2s linear infinite;}
+    @keyframes invMusicSpin{to{transform:rotate(360deg)}}
+    #invitationMusicToggle:focus-visible{outline:3px solid var(--gold-light);outline-offset:3px}
+  </style>
+
 </body>
 </html>
 `;
