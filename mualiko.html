@@ -271,10 +271,10 @@
     cursor:pointer; text-decoration:none; display:inline-block;}
 
   /* ============ DRESS CODE ============ */
-  .swatch-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; max-width:420px; width:100%; margin:14px auto 0;}
+  .swatch-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; max-width:340px; width:100%; margin:14px auto 0;}
   .swatch{display:flex; flex-direction:column; align-items:center; gap:8px;}
   .swatch .chip{
-    width:100%; aspect-ratio:4/5; min-height:190px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.35);
+    width:100%; aspect-ratio:4/5; min-height:150px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.35);
     box-shadow:0 6px 16px rgba(0,0,0,0.35); position:relative; overflow:hidden;
     display:flex; align-items:flex-end; justify-content:center; background-size:cover; background-position:center;
   }
@@ -299,10 +299,10 @@
   .program-body .tm{font-family:'Jost'; font-size:12px; letter-spacing:0.1em; color:var(--gold);}
 
   /* ============ WAZAZI / HOSTS ============ */
-  .hosts-grid{display:flex; gap:34px; margin-top:16px; flex-wrap:wrap; justify-content:center;}
-  .host{display:flex; flex-direction:column; align-items:center; gap:4px; max-width:130px;}
-  .host .lbl{font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); opacity:0.9;}
-  .host .nm{font-family:'Cormorant Garamond'; font-size:16px;}
+  .hosts-grid{display:flex; flex-direction:column; align-items:center; gap:22px; width:100%; max-width:340px; margin:20px auto 0;}
+  .host{display:flex; flex-direction:column; align-items:center; gap:7px; width:100%; max-width:300px; text-align:center;}
+  .host .lbl{font-size:11px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); opacity:0.9;}
+  .host .nm{font-family:'Cormorant Garamond'; font-size:20px; line-height:1.25;}
 
   /* ============ WAHUDUMU / SERVICE PROVIDERS ============ */
   .providers-list{width:100%; max-width:320px; display:flex; flex-direction:column; gap:0; margin-top:16px;}
@@ -526,6 +526,31 @@
       padding-top:30px;
       padding-bottom:30px;
     }
+  }
+
+
+  /* ============ MAREKEBISHO YA MWISHO: SPACING, MAVAZI NA WAZAZI ============ */
+  #hero{padding-top:88px;padding-bottom:64px;}
+  #countdown{padding-top:58px;padding-bottom:58px;}
+  #welcome,#story,#pass,#reception,#dresscode,#program,#hosts,#providers,#gift,#note,#thankyou{
+    padding-top:58px !important;padding-bottom:58px !important;
+  }
+  #welcome .date-badge{margin-top:28px;}
+  #dresscode .swatch-grid{max-width:340px;gap:12px;}
+  #dresscode .swatch .chip{min-height:145px;}
+  #hosts .hosts-grid{flex-direction:column;align-items:center;gap:24px;margin-top:24px;}
+  #hosts .host{width:100%;max-width:320px;gap:7px;}
+  #hosts .host .lbl{font-size:11px;letter-spacing:.13em;}
+  #hosts .host .nm{font-size:21px;line-height:1.25;}
+  @media(max-width:480px){
+    #hero{padding-top:76px;padding-bottom:48px;}
+    #countdown{padding-top:46px;padding-bottom:46px;}
+    #welcome,#story,#pass,#reception,#dresscode,#program,#hosts,#providers,#gift,#note,#thankyou{
+      padding-top:46px !important;padding-bottom:46px !important;
+    }
+    #dresscode .swatch-grid{max-width:310px;gap:10px;}
+    #dresscode .swatch .chip{min-height:125px;}
+    #hosts .hosts-grid{gap:20px;}
   }
 
 </style>
@@ -1740,6 +1765,20 @@
     style="width:100%; border:0; display:block; background:#FBF3E6;" loading="lazy"></iframe>
 </div>
 
+<!-- MUSIC PLAYER: controls ziko kwenye ukurasa mkuu ili JS ya mualiko izifikie -->
+<audio id="invitationMusicPlayer" preload="auto" playsinline></audio>
+<div id="invitationMusicControls" aria-label="Music controls">
+  <button id="invitationMusicToggle" type="button" aria-label="Play music" title="Play music">▶</button>
+  <button id="invitationMusicMute" type="button" aria-label="Mute music" title="Mute music">🔊</button>
+</div>
+<style>
+  #invitationMusicControls{position:fixed;right:14px;bottom:18px;z-index:2147482000;display:none;align-items:center;gap:8px;}
+  #invitationMusicControls button{width:46px;height:46px;border:1px solid rgba(255,255,255,.75);border-radius:50%;background:linear-gradient(145deg,#c79a3e,#8b6420);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.24);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;font-family:Arial,sans-serif;}
+  #invitationMusicControls button:focus-visible{outline:3px solid var(--gold-light);outline-offset:3px}
+  #invitationMusicControls button.is-muted{opacity:.72}
+  @media(max-width:480px){#invitationMusicControls{right:12px;bottom:14px;gap:7px}#invitationMusicControls button{width:43px;height:43px}}
+</style>
+
 <script>
 (function(){
   var landingHtml = `<!DOCTYPE html>
@@ -2590,25 +2629,7 @@
 <\/script>
 
 </div>
-  <audio id="invitationMusicPlayer" preload="auto" playsinline></audio>
-  <div id="invitationMusicControls" aria-label="Music controls" style="position:fixed;right:14px;bottom:18px;z-index:9999;display:none;align-items:center;gap:8px;">
-    <button id="invitationMusicToggle" type="button" aria-label="Play music" title="Play music">▶</button>
-    <button id="invitationMusicMute" type="button" aria-label="Mute music" title="Mute music">🔊</button>
-  </div>
-  <style>
-    #invitationMusicControls button{
-      width:46px;height:46px;border:1px solid rgba(255,255,255,.65);border-radius:50%;
-      background:linear-gradient(145deg,#c79a3e,#8b6420);color:#fff;
-      box-shadow:0 6px 18px rgba(0,0,0,.24);display:flex;align-items:center;justify-content:center;
-      cursor:pointer;font-size:18px;font-family:Arial,sans-serif;
-    }
-    #invitationMusicControls button:focus-visible{outline:3px solid var(--gold-light);outline-offset:3px}
-    #invitationMusicControls button.is-muted{opacity:.72}
-    @media(max-width:480px){
-      #invitationMusicControls{right:12px;bottom:14px;gap:7px}
-      #invitationMusicControls button{width:43px;height:43px}
-    }
-  </style>
+
 
 </body>
 </html>
