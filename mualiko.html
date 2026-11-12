@@ -271,10 +271,10 @@
     cursor:pointer; text-decoration:none; display:inline-block;}
 
   /* ============ DRESS CODE ============ */
-  .swatch-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; max-width:320px; width:100%; margin-top:10px;}
+  .swatch-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; max-width:420px; width:100%; margin:14px auto 0;}
   .swatch{display:flex; flex-direction:column; align-items:center; gap:8px;}
   .swatch .chip{
-    width:100%; aspect-ratio:3/4; border-radius:10px; border:1.5px solid rgba(255,255,255,0.35);
+    width:100%; aspect-ratio:4/5; min-height:190px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.35);
     box-shadow:0 6px 16px rgba(0,0,0,0.35); position:relative; overflow:hidden;
     display:flex; align-items:flex-end; justify-content:center; background-size:cover; background-position:center;
   }
@@ -451,7 +451,7 @@
   #reception .venue-photo-grid{margin-top:10px;}
   #reception #venueName{margin-top:10px !important;}
   #reception .map-btn{margin-top:10px;}
-  #dresscode .swatch-grid{margin-top:7px;gap:10px;}
+  #dresscode .swatch-grid{margin-top:12px;gap:16px;max-width:420px;}
   #program .program-list{margin-top:8px;gap:8px;}
   #program .program-body{padding:6px 0;}
   #hosts .hosts-grid{margin-top:9px;gap:24px;}
@@ -498,6 +498,12 @@
     }
   }
 
+
+  @media(max-width:480px){
+    #dresscode .swatch-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:100%;}
+    #dresscode .swatch .chip{min-height:170px;}
+    #dresscode .swatch .name{font-size:11px;}
+  }
 
   /* ============ SPACING IMPROVEMENT: nafasi kati ya sehemu za mwaliko ============ */
   #hero{padding-bottom:34px;}
@@ -612,6 +618,7 @@
       <div class="unit"><div class="num" id="cdDays">--</div><div class="lbl" id="cdLblDays">Siku</div></div>
       <div class="unit"><div class="num" id="cdHours">--</div><div class="lbl" id="cdLblHours">Saa</div></div>
       <div class="unit"><div class="num" id="cdMins">--</div><div class="lbl" id="cdLblMins">Dakika</div></div>
+      <div class="unit"><div class="num" id="cdSecs">--</div><div class="lbl" id="cdLblSecs">Sekunde</div></div>
     </div>
   </section>
 
@@ -751,18 +758,21 @@
       document.getElementById('cdDays').textContent = '--';
       document.getElementById('cdHours').textContent = '--';
       document.getElementById('cdMins').textContent = '--';
+      document.getElementById('cdSecs').textContent = '--';
       return;
     }
     const diff = Math.max(0, eventTargetMs - now);
     const days = Math.floor(diff / 86400000);
     const hours = Math.floor((diff % 86400000) / 3600000);
     const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
     document.getElementById('cdDays').textContent = days;
     document.getElementById('cdHours').textContent = hours;
     document.getElementById('cdMins').textContent = mins;
+    document.getElementById('cdSecs').textContent = secs;
   }
   updateCountdown();
-  setInterval(updateCountdown, 60000);
+  setInterval(updateCountdown, 1000);
 
   // =====================================================================
   // ===== DATA HALISI KUTOKA SUPABASE (kwa token/id kwenye URL) ========
@@ -1130,7 +1140,7 @@
     sw: {
       scrollCue:'Scroll Kuendelea',
       welcomeSubText:'Karibu Kwenye Mualiko Wetu', welcomeTapLabel:'Gusa Kuendelea',
-      cdEyebrow:'Siku Zinazobaki', cdDays:'Siku', cdHours:'Saa', cdMins:'Dakika',
+      cdEyebrow:'Siku Zinazobaki', cdDays:'Siku', cdHours:'Saa', cdMins:'Dakika', cdSecs:'Sekunde',
       welcomeEyebrow:'Karibu', eventDateEyebrow:'Tarehe ya Tukio',
       storyEyebrow:'Hadithi Yetu',
       passEyebrow:'Kadi Yako ya Kuingia', passNumLabel:'NAMBA:',
@@ -1149,7 +1159,7 @@
     en: {
       scrollCue:'Scroll to Continue',
       welcomeSubText:'Welcome to Our Invitation', welcomeTapLabel:'Tap to Continue',
-      cdEyebrow:'Days Remaining', cdDays:'Days', cdHours:'Hours', cdMins:'Minutes',
+      cdEyebrow:'Days Remaining', cdDays:'Days', cdHours:'Hours', cdMins:'Minutes', cdSecs:'Seconds',
       welcomeEyebrow:'Welcome', eventDateEyebrow:'Event Date',
       storyEyebrow:'Our Story',
       passEyebrow:'Your Entry Pass', passNumLabel:'NUMBER:',
@@ -1190,6 +1200,7 @@
     setText('cdLblDays', t.cdDays);
     setText('cdLblHours', t.cdHours);
     setText('cdLblMins', t.cdMins);
+    setText('cdLblSecs', t.cdSecs);
     setText('welcomeEyebrow', t.welcomeEyebrow);
     setText('eventDateEyebrow', t.eventDateEyebrow);
     setText('storyEyebrow', t.storyEyebrow);
@@ -1277,7 +1288,9 @@
     if(!wrap) return;
     let html = '';
     const rank = (guest.vip_status || '').trim();
-    if(eventData?.show_vip_badge !== false && rank && rank.toLowerCase() !== 'none'){
+    const rankKey = rank.toLowerCase().replace(/[\s_-]+/g,'');
+    // Usionyeshe lebo ya zamani ya "Snap Card(s)" chini ya jina la mgeni.
+    if(eventData?.show_vip_badge !== false && rank && rank.toLowerCase() !== 'none' && !['snapcard','snapcards'].includes(rankKey)){
       if(rank.toLowerCase() === 'vvip'){
         html += `<span class="vip-pill vvip">👑 VVIP</span>`;
       } else if(rank.toLowerCase() === 'vip'){
@@ -1295,58 +1308,87 @@
   let currentGuestCardId = null;      // (bado inatunzwa - inaweza kutumika baadaye)
   let currentCoupleContactPhone = ''; // events.contact_phone - lengwa la "Ujumbe wa Shukrani" kupitia WhatsApp
 
-  // ---------- EVENT MUSIC PLAYER ----------
+  // ---------- EVENT MUSIC PLAYER: PLAY/PAUSE + MUTE ----------
   let invitationMusicReady = false;
   let invitationMusicMuted = false;
-  async function loadInvitationMusic(cardToken, suppliedTracks){
-    const button=document.getElementById('invitationMusicToggle');
+  function syncMusicButtons(){
     const player=document.getElementById('invitationMusicPlayer');
-    if(!button || !player) return;
+    const playBtn=document.getElementById('invitationMusicToggle');
+    const muteBtn=document.getElementById('invitationMusicMute');
+    if(!player)return;
+    if(playBtn){
+      playBtn.textContent=player.paused?'▶':'Ⅱ';
+      playBtn.title=player.paused?'Play music':'Pause music';
+      playBtn.setAttribute('aria-label',player.paused?'Play music':'Pause music');
+      playBtn.classList.toggle('is-playing',!player.paused);
+    }
+    if(muteBtn){
+      muteBtn.textContent=player.muted?'🔇':'🔊';
+      muteBtn.title=player.muted?'Unmute music':'Mute music';
+      muteBtn.setAttribute('aria-label',player.muted?'Unmute music':'Mute music');
+      muteBtn.classList.toggle('is-muted',player.muted);
+    }
+  }
+  async function loadInvitationMusic(cardToken, suppliedTracks){
+    const controls=document.getElementById('invitationMusicControls');
+    const player=document.getElementById('invitationMusicPlayer');
+    if(!controls || !player) return;
     try{
       let tracks=Array.isArray(suppliedTracks)?suppliedTracks:null;
-      if(!tracks){ const {data,error}=await sb.rpc('get_invitation_music_by_card',{p_card_id:cardToken}); tracks=Array.isArray(data)?data:(Array.isArray(data?.tracks)?data.tracks:[]); if(error) throw error; }
-      if(!tracks.length){ button.style.display='none'; return; }
+      if(!tracks){
+        const {data,error}=await sb.rpc('get_invitation_music_by_card',{p_card_id:cardToken});
+        tracks=Array.isArray(data)?data:(Array.isArray(data?.tracks)?data.tracks:[]);
+        if(error) throw error;
+      }
+      if(!tracks.length){controls.style.display='none';return;}
       const chosen=tracks[Math.floor(Math.random()*tracks.length)];
-      if(!chosen?.url){button.style.display='none';return;}
+      if(!chosen?.url){controls.style.display='none';return;}
       player.src=chosen.url; player.loop=true; player.volume=0.78; player.muted=false;
-      button.style.display='flex';
+      controls.style.display='flex';
+      syncMusicButtons();
       const attempt=player.play();
       if(attempt && typeof attempt.then==='function'){
-        attempt.then(()=>{invitationMusicReady=true;button.classList.add('is-playing');button.setAttribute('aria-pressed','true');})
-          .catch(()=>{invitationMusicReady=false;button.classList.remove('is-playing');});
+        attempt.then(()=>{invitationMusicReady=true;syncMusicButtons();})
+          .catch(()=>{invitationMusicReady=false;syncMusicButtons();});
       }
-    }catch(e){console.warn('Muziki wa event haukupatikana:',e);button.style.display='none';}
+    }catch(e){console.warn('Muziki wa event haukupatikana:',e);controls.style.display='none';}
   }
   async function toggleInvitationMusic(){
     const player=document.getElementById('invitationMusicPlayer');
-    const button=document.getElementById('invitationMusicToggle');
     if(!player?.src)return;
     if(player.paused){
-      player.muted=false;
-      try{await player.play();invitationMusicReady=true;invitationMusicMuted=false;button.classList.add('is-playing');button.setAttribute('aria-pressed','true');}
+      try{await player.play();invitationMusicReady=true;}
       catch(e){console.warn('Browser imezuia autoplay:',e);}
     }else{
-      player.muted=!player.muted; invitationMusicMuted=player.muted;
-      button.classList.toggle('is-playing',!player.muted);
-      button.setAttribute('aria-pressed',String(!player.muted));
-      if(player.muted) button.style.opacity='.65'; else button.style.opacity='1';
+      player.pause(); invitationMusicReady=false;
     }
+    syncMusicButtons();
   }
-  // Delegated listener: kitufe kiko karibu na mwisho wa HTML, baada ya script hii.
-  document.addEventListener('click',(event)=>{
-    if(event.target?.closest?.('#invitationMusicToggle')){event.preventDefault();toggleInvitationMusic();}
-  });
-  // Browser nyingi huzuia autoplay yenye sauti. Jaribu mara moja ukurasa ukifunguka;
-  // kama imezuiwa, mguso wa kwanza wa mgeni huanzisha sauti bila kuhitaji kubonyeza icon.
-  document.addEventListener('pointerdown',function startMusicOnFirstGesture(event){
-    if(event.target?.closest?.('#invitationMusicToggle')) return;
+  function toggleInvitationMusicMute(){
     const player=document.getElementById('invitationMusicPlayer');
-    const button=document.getElementById('invitationMusicToggle');
+    if(!player?.src)return;
+    player.muted=!player.muted;
+    invitationMusicMuted=player.muted;
+    syncMusicButtons();
+  }
+  document.addEventListener('click',(event)=>{
+    if(event.target?.closest?.('#invitationMusicToggle')){
+      event.preventDefault();toggleInvitationMusic();
+    }else if(event.target?.closest?.('#invitationMusicMute')){
+      event.preventDefault();toggleInvitationMusicMute();
+    }
+  });
+  document.addEventListener('play',syncMusicButtons,true);
+  document.addEventListener('pause',syncMusicButtons,true);
+  document.addEventListener('volumechange',syncMusicButtons,true);
+  // Autoplay ikizuiwa na browser, jaribu tena kwenye mguso wa kwanza wa mgeni.
+  document.addEventListener('pointerdown',function startMusicOnFirstGesture(event){
+    if(event.target?.closest?.('#invitationMusicControls')) return;
+    const player=document.getElementById('invitationMusicPlayer');
     if(!player?.src || !player.paused) return;
     player.muted=false;
     player.play().then(()=>{
-      invitationMusicReady=true; invitationMusicMuted=false;
-      if(button){button.classList.add('is-playing');button.style.opacity='1';button.setAttribute('aria-pressed','true');}
+      invitationMusicReady=true; invitationMusicMuted=false; syncMusicButtons();
       document.removeEventListener('pointerdown',startMusicOnFirstGesture);
     }).catch(()=>{});
   },{passive:true});
@@ -2549,13 +2591,23 @@
 
 </div>
   <audio id="invitationMusicPlayer" preload="auto" playsinline></audio>
-  <button id="invitationMusicToggle" type="button" aria-label="Zima au washa muziki" title="Zima/Washa muziki" style="position:fixed;right:18px;bottom:22px;z-index:9999;width:52px;height:52px;border:1px solid rgba(255,255,255,.55);border-radius:50%;background:linear-gradient(145deg,#c79a3e,#8b6420);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);display:none;align-items:center;justify-content:center;cursor:pointer;font-size:22px;">
-    <span id="invitationMusicIcon" style="display:inline-block;line-height:1;">♫</span>
-  </button>
+  <div id="invitationMusicControls" aria-label="Music controls" style="position:fixed;right:14px;bottom:18px;z-index:9999;display:none;align-items:center;gap:8px;">
+    <button id="invitationMusicToggle" type="button" aria-label="Play music" title="Play music">▶</button>
+    <button id="invitationMusicMute" type="button" aria-label="Mute music" title="Mute music">🔊</button>
+  </div>
   <style>
-    #invitationMusicToggle.is-playing #invitationMusicIcon{animation:invMusicSpin 3.2s linear infinite;}
-    @keyframes invMusicSpin{to{transform:rotate(360deg)}}
-    #invitationMusicToggle:focus-visible{outline:3px solid var(--gold-light);outline-offset:3px}
+    #invitationMusicControls button{
+      width:46px;height:46px;border:1px solid rgba(255,255,255,.65);border-radius:50%;
+      background:linear-gradient(145deg,#c79a3e,#8b6420);color:#fff;
+      box-shadow:0 6px 18px rgba(0,0,0,.24);display:flex;align-items:center;justify-content:center;
+      cursor:pointer;font-size:18px;font-family:Arial,sans-serif;
+    }
+    #invitationMusicControls button:focus-visible{outline:3px solid var(--gold-light);outline-offset:3px}
+    #invitationMusicControls button.is-muted{opacity:.72}
+    @media(max-width:480px){
+      #invitationMusicControls{right:12px;bottom:14px;gap:7px}
+      #invitationMusicControls button{width:43px;height:43px}
+    }
   </style>
 
 </body>
