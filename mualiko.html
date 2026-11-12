@@ -1180,7 +1180,7 @@
     setText('providersEyebrow', t.providersEyebrow);
     setText('giftEyebrow', t.giftEyebrow);
     setText('noteEyebrow', t.noteEyebrow);
-    const customNoteHeading = pickLang(content?.note_heading, lang);
+    const customNoteHeading = pickLang(lastContent?.note_heading, lang);
     if(customNoteHeading) setText('noteEyebrow', customNoteHeading);
     setText('noteSent', t.noteSent);
     setText('thankyouScript', t.thankyouScript);
