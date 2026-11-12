@@ -1266,7 +1266,10 @@
   async function loadInvitation(){
     const loadStartTs = Date.now(); // hutumika kuhakikisha loader haitoweki upesi mno
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('id') || params.get('token');
+    // Meta WhatsApp inaweza kuacha placeholder ya {1} mbele ya Card ID.
+    // URLSearchParams tayari hufungua %7B1%7D kuwa {1}; iondoe kabla ya RPC.
+    const rawToken = (params.get('id') || params.get('token') || '').trim();
+    const token = rawToken.replace(/^\{1\}/i, '').trim();
 
     if(!token){
       showLoadError('Kiungo hiki cha mualiko hakina taarifa sahihi. Tafadhali tumia kiungo alichotumiwa mgeni.');
