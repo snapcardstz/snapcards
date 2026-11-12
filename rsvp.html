@@ -37,28 +37,28 @@ p{font-size:14px;line-height:1.7;color:#E5E7EF}
 
 <div class="card" id="card">
   <div class="brand-mark" id="brandMark"></div>
-  <div class="brand-name" id="brandName">Meshez Kadi</div>
+  <div class="brand-name" id="brandName">Snap Cards</div>
   <div class="spinner"></div>
   <h1>Inapakia taarifa</h1>
   <p>Tafadhali subiri kidogo.</p>
-  <div class="footer-note">Meshez Kadi · Mfumo wa Mialiko</div>
+  <div class="footer-note">Snap Cards · Mfumo wa Mialiko</div>
 </div>
 
 <script>
-const SUPABASE_URL = 'https://fymjjqembyrlwgktbcgf.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_SMflxbKh4452586Q4ojrow_L4ZGq2uu';
+const SUPABASE_URL = 'https://cornvepcsdfiiyivdfzn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_H5cF-9Wsdo8o3r5GassjXQ_dr4fuxP8';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const card = document.getElementById('card');
 
 // Utambulisho wa ukurasa huu unafuata Main Name na Logo zilizowekwa kwenye System Branding.
-let rsvpBranding = { name: 'Meshez Kadi', logo: '' };
+let rsvpBranding = { name: 'Snap Cards', logo: '' };
 
 function paintRsvpBranding() {
   const mark = document.getElementById('brandMark');
   const nameEl = document.getElementById('brandName');
-  if (nameEl) nameEl.textContent = rsvpBranding.name || 'Meshez Kadi';
+  if (nameEl) nameEl.textContent = rsvpBranding.name || 'Snap Cards';
   if (mark) {
     mark.replaceChildren();
     if (rsvpBranding.logo) {
@@ -68,7 +68,7 @@ function paintRsvpBranding() {
       img.onerror = () => img.remove();
       mark.appendChild(img);
     } else {
-      mark.textContent = (rsvpBranding.name || 'Meshez Kadi').trim().slice(0, 2).toUpperCase();
+      mark.textContent = (rsvpBranding.name || 'Snap Cards').trim().slice(0, 2).toUpperCase();
       mark.style.color = '#0047AB';
       mark.style.fontWeight = '800';
       mark.style.fontSize = '20px';
@@ -76,7 +76,7 @@ function paintRsvpBranding() {
   }
 }
 function brandHeaderHtml() {
-  const name = (rsvpBranding.name || 'Meshez Kadi')
+  const name = (rsvpBranding.name || 'Snap Cards')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const logo = rsvpBranding.logo
     ? '<img src="' + rsvpBranding.logo.replace(/"/g, '&quot;') + '" alt="System logo">'
@@ -84,14 +84,6 @@ function brandHeaderHtml() {
   return '<div class="brand-mark" id="brandMark">' + logo + (logo ? '' : name.slice(0,2).toUpperCase()) + '</div><div class="brand-name" id="brandName">' + name + '</div>';
 }
 async function loadRsvpBranding() {
-  try {
-    const cached = JSON.parse(localStorage.getItem('meshez_system_branding_v2') || localStorage.getItem('meshez_system_branding') || 'null');
-    if (cached) {
-      rsvpBranding.name = cached.name || cached.mainName || rsvpBranding.name;
-      rsvpBranding.logo = cached.logoOffline || cached.logo || cached.logoDataUrl || cached.logoUrl || '';
-      paintRsvpBranding();
-    }
-  } catch (e) {}
   try {
     const { data, error } = await sb.rpc('get_public_system_branding');
     if (error) throw error;
@@ -115,11 +107,17 @@ function showInvalidLink() {
     <p>Tafadhali fungua kiungo cha uthibitisho ulichotumiwa kwenye ujumbe wa WhatsApp.</p>`;
 }
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[char]);
+}
+
 function showChoiceScreen(guestName) {
   card.innerHTML = `
     ${brandHeaderHtml()}
     <h1>Thibitisha Uwepo Wako</h1>
-    ${guestName ? `<div class="guest-name">${guestName}</div>` : ''}
+    ${guestName ? `<div class="guest-name">${escapeHtml(guestName)}</div>` : ''}
     <p>Tafadhali chagua hali yako ya mahudhurio kwa tukio hili.</p>
     <div class="btn-row">
       <button class="rsvp-btn btn-yes" id="btnYes" onclick="submitChoice('yes')">Nitahudhuria</button>
@@ -135,16 +133,29 @@ async function submitChoice(status) {
 
   // "Last click wins": tunatuma hali mpya kila mara - hata kama alishajibu awali,
   // jibu la MWISHO alilobonyeza ndilo litakalobaki kwenye mfumo.
-  const { data, error } = await sb.rpc('submit_rsvp', {
-    card_id_input: currentCardId,
-    status_input: status
-  });
+  let data = null;
+  let error = null;
+
+  try {
+    const result = await sb.rpc('submit_rsvp', {
+      card_id_input: currentCardId,
+      status_input: status
+    });
+    data = result.data;
+    error = result.error;
+  } catch (err) {
+    error = err;
+  }
 
   if (error || !data || data.success === false) {
+    console.error('RSVP submission failed:', error || data);
+    const message = (data && data.message)
+      ? data.message
+      : 'Imeshindwa kuhifadhi jibu lako. Tafadhali jaribu tena au wasiliana na mwenyeji.';
     card.innerHTML = `
       <div class="status-mark">!</div>
       <h1 class="status-err">Imeshindwa</h1>
-      <p>${(data && data.message) || 'Kadi hii haikupatikana kwenye mfumo. Tafadhali wasiliana na mwenyeji.'}</p>`;
+      <p>${message}</p>`;
     return;
   }
 
@@ -163,7 +174,9 @@ async function submitChoice(status) {
 
 function init() {
   const params = new URLSearchParams(window.location.search);
-  const cardId = params.get('id');
+  // URLSearchParams tayari huondoa URL encoding; hapa tunaondoa {1} ya ziada tu.
+  const rawCardId = (params.get('id') || '').trim();
+  const cardId = rawCardId.replace(/^\{1\}/i, '').trim();
 
   if (!cardId) {
     showInvalidLink();
