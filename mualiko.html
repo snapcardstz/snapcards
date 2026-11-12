@@ -1351,15 +1351,15 @@
     // kwa "Ujumbe wa Shukrani"). Hii inaepuka 406 kwa mgeni asiye-login.
     const { data: rawResult, error: guestErr } = await invitationWithTimeout(
       sb.rpc('get_invitation_by_card', { p_card_id: token }),
-      'Kupata taarifa za mgeni', 25000
+      'Kupata taarifa za mgeni', 15000
     );
-    const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
+    const result = Array.isArray(rawResult) ? (rawResult[0] || null) : rawResult;
 
     if(guestErr || !result || (typeof result === 'object' && !Object.keys(result).length)){
       if(guestErr) console.error('get_invitation_by_card RPC error:', guestErr, 'Card ID:', token);
       showLoadError(guestErr
         ? 'Taarifa za mwaliko hazijaweza kupatikana kwa sasa. Tafadhali jaribu tena.'
-        : 'Mwaliko huu haupo au kiungo chake si sahihi. Tafadhali wasiliana na mwenyeji.');
+        : 'Samahani, taarifa za kadi hii hazipo kwenye mfumo. Tafadhali tumia kiungo sahihi kutoka kwa mwenyeji.');
       return;
     }
     // Design ya ziada (anwani, crop ya cover, kichwa cha ujumbe na muziki)
@@ -1371,7 +1371,7 @@
       'Kupata muundo wa mwaliko', 15000
     ).then(response=>{
       if(response.error) throw response.error;
-      return response.data || null;
+      return Array.isArray(response.data) ? (response.data[0] || null) : (response.data || null);
     }).catch(error=>{console.warn('Public invitation design haijapatikana:',error);return null;});
 
     // RPC inaweza kurudisha muundo wa zamani uliokuwa nested (guest/event)
@@ -1456,21 +1456,17 @@
       lastEventTimeText = formatTimeAMPM(eventData.event_time) || null;
       lastSnapCardsPublicSettings = { whatsapp_phone:'', portfolio_images:[null,null,null,null,null,null] };
       if(eventData.user_id){
-        try{
-          const {data:publicSettings,error:publicSettingsError}=await invitationWithTimeout(sb.rpc(
-            'get_snap_cards_public_settings',
-            {p_user_id:eventData.user_id}
-          ), 'Kupata taarifa za mfumo', 10000);
-          if(!publicSettingsError && publicSettings){
-            lastSnapCardsPublicSettings={
-              whatsapp_phone:publicSettings.whatsapp_phone || '',
-              portfolio_images:Array.isArray(publicSettings.portfolio_images)
-                ? publicSettings.portfolio_images : [null,null,null,null,null,null]
-            };
-          }else if(publicSettingsError){
-            console.warn('Snap Cards public settings hazijapatikana:',publicSettingsError.message);
-          }
-        }catch(settingsError){ console.warn('Snap Cards public settings:',settingsError); }
+        invitationWithTimeout(sb.rpc('get_snap_cards_public_settings',{p_user_id:eventData.user_id}),
+          'Kupata taarifa za mfumo',10000).then(({data:publicSettings,error:publicSettingsError})=>{
+            if(!publicSettingsError && publicSettings){
+              lastSnapCardsPublicSettings={
+                whatsapp_phone:publicSettings.whatsapp_phone || '',
+                portfolio_images:Array.isArray(publicSettings.portfolio_images)
+                  ? publicSettings.portfolio_images : [null,null,null,null,null,null]
+              };
+              syncLandingInvitationData();
+            }else if(publicSettingsError){console.warn('Snap Cards public settings hazijapatikana:',publicSettingsError.message);}
+          }).catch(settingsError=>console.warn('Snap Cards public settings:',settingsError));
       }
       syncLandingInvitationData();
 
