@@ -1308,15 +1308,30 @@
       if(player.muted) button.style.opacity='.65'; else button.style.opacity='1';
     }
   }
-  document.getElementById('invitationMusicToggle')?.addEventListener('click',toggleInvitationMusic);
-  // Browser zikizuia autoplay, touch/click ya kwanza kwenye ukurasa huanzisha muziki.
-  document.addEventListener('pointerdown',(event)=>{
+  // Delegated listener: kitufe kiko karibu na mwisho wa HTML, baada ya script hii.
+  document.addEventListener('click',(event)=>{
+    if(event.target?.closest?.('#invitationMusicToggle')){event.preventDefault();toggleInvitationMusic();}
+  });
+  // Browser nyingi huzuia autoplay yenye sauti. Jaribu mara moja ukurasa ukifunguka;
+  // kama imezuiwa, mguso wa kwanza wa mgeni huanzisha sauti bila kuhitaji kubonyeza icon.
+  document.addEventListener('pointerdown',function startMusicOnFirstGesture(event){
     if(event.target?.closest?.('#invitationMusicToggle')) return;
     const player=document.getElementById('invitationMusicPlayer');
-    if(player?.src && player.paused) player.play().then(()=>{
-      const b=document.getElementById('invitationMusicToggle'); if(b){b.classList.add('is-playing');b.style.opacity='1';b.setAttribute('aria-pressed','true');}
+    const button=document.getElementById('invitationMusicToggle');
+    if(!player?.src || !player.paused) return;
+    player.muted=false;
+    player.play().then(()=>{
+      invitationMusicReady=true; invitationMusicMuted=false;
+      if(button){button.classList.add('is-playing');button.style.opacity='1';button.setAttribute('aria-pressed','true');}
+      document.removeEventListener('pointerdown',startMusicOnFirstGesture);
     }).catch(()=>{});
-  },{once:true,passive:true});
+  },{passive:true});
+
+  function invitationWithTimeout(promise, label, timeoutMs=15000){
+    let timer;
+    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' imechukua muda mrefu. Tafadhali jaribu tena.')),timeoutMs);});
+    return Promise.race([promise,timeout]).finally(()=>clearTimeout(timer));
+  }
 
   async function loadInvitation(){
     const loadStartTs = Date.now(); // hutumika kuhakikisha loader haitoweki upesi mno
@@ -1334,8 +1349,10 @@
     // 1) Tafuta mgeni na taarifa za event husika kwa pamoja - kupitia RPC
     // (inayopita RLS kwa usalama, kama vile submit_guest_note inavyofanya
     // kwa "Ujumbe wa Shukrani"). Hii inaepuka 406 kwa mgeni asiye-login.
-    const { data: result, error: guestErr } = await sb
-      .rpc('get_invitation_by_card', { p_card_id: token });
+    const { data: result, error: guestErr } = await invitationWithTimeout(
+      sb.rpc('get_invitation_by_card', { p_card_id: token }),
+      'Kupata taarifa za mgeni', 15000
+    );
 
     if(guestErr || !result){
       if(guestErr) console.error('get_invitation_by_card RPC error:', guestErr);
@@ -1348,7 +1365,7 @@
     // inasomwa kwa RPC ndogo tofauti ili tusibadilishe RPC ya zamani ya RSVP.
     let publicDesign = null;
     try{
-      const designResponse = await sb.rpc('get_public_invitation_design_by_card',{p_card_id:token});
+      const designResponse = await invitationWithTimeout(sb.rpc('get_public_invitation_design_by_card',{p_card_id:token}), 'Kupata muundo wa mwaliko', 10000);
       if(!designResponse.error) publicDesign = designResponse.data || null;
       else console.warn('Public invitation design:',designResponse.error.message);
     }catch(designError){console.warn('Public invitation design:',designError);}
@@ -1440,10 +1457,10 @@
       lastSnapCardsPublicSettings = { whatsapp_phone:'', portfolio_images:[null,null,null,null,null,null] };
       if(eventData.user_id){
         try{
-          const {data:publicSettings,error:publicSettingsError}=await sb.rpc(
+          const {data:publicSettings,error:publicSettingsError}=await invitationWithTimeout(sb.rpc(
             'get_snap_cards_public_settings',
             {p_user_id:eventData.user_id}
-          );
+          ), 'Kupata taarifa za mfumo', 10000);
           if(!publicSettingsError && publicSettings){
             lastSnapCardsPublicSettings={
               whatsapp_phone:publicSettings.whatsapp_phone || '',
@@ -1539,7 +1556,14 @@
     }, remaining);
   }
 
-  loadInvitation();
+  function startInvitationLoad(){
+    loadInvitation().catch(error=>{
+      console.error('Hitilafu isiyotarajiwa wakati wa kupakia mwaliko:',error);
+      showLoadError('Mwaliko umeshindwa kupakia taarifa kwa sasa. Tafadhali fungua tena kiungo baada ya muda mfupi.');
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',startInvitationLoad,{once:true});
+  else startInvitationLoad();
 
   // ---------- NOTE SUBMIT (inafungua WhatsApp - moja kwa moja, bila Supabase) ----------
   // Ujumbe unaotumwa ni ULE ULE aliouandika mgeni - bila kuongeza jina, tarehe, au
