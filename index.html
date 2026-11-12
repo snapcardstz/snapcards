@@ -8198,7 +8198,7 @@ let musicSourceDuration = 0;
 let musicSourceFile = null;
 function fmtMusicTime(sec){ sec=Math.max(0,Math.floor(Number(sec)||0)); return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`; }
 function getMusicTrimRange(){
-  const start=Number(document.getElementById('invMusicTrimStart')?.value||0);
+  const start=Number(document.getElementById('invMusicTrimStart')?.value ?? 0);
   const end=Number(document.getElementById('invMusicTrimEnd')?.value ?? musicSourceDuration);
   return {start:Math.max(0,Math.min(start,musicSourceDuration)),end:Math.max(0,Math.min(end,musicSourceDuration))};
 }
@@ -8242,48 +8242,53 @@ function previewMusicUpload(){
   };
   audio.onerror=()=>showToast('Browser imeshindwa kufungua aina hii ya audio. Jaribu MP3, M4A au WAV.','error');
 }
-async function encodeMusicToOpus(file,startSeconds,endSeconds){
+async function encodeMusicToWavOffline(file,startSeconds,endSeconds){
   const Ctx=window.AudioContext||window.webkitAudioContext;
-  if(!Ctx) throw new Error('Browser hii haitumii AudioContext. Tumia Chrome au Edge iliyosasishwa.');
-  if(!window.MediaRecorder || typeof MediaRecorder.isTypeSupported!=='function') throw new Error('Browser hii haitumii MediaRecorder ya kubana sauti. Tumia Chrome au Edge iliyosasishwa.');
-  const mime=['audio/webm;codecs=opus','audio/ogg;codecs=opus'].find(type=>MediaRecorder.isTypeSupported(type));
-  if(!mime) throw new Error('Browser haijaruhusu Opus/WebM. Tumia Chrome au Edge ya kisasa.');
-  const ctx=new Ctx(); let source=null,recorder=null,watchdog=null;
+  const Offline=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+  if(!Ctx || !Offline) throw new Error('Browser hii haitumii audio conversion. Tumia Chrome au Edge iliyosasishwa.');
+  const decodeCtx=new Ctx();
   try{
-    const buffer=await ctx.decodeAudioData((await file.arrayBuffer()).slice(0));
-    if(!buffer || !buffer.duration) throw new Error('Imeshindikana kusoma audio. Jaribu MP3, M4A au WAV.');
-    const start=Math.max(0,Math.min(Number(startSeconds)||0,buffer.duration));
-    const end=Math.max(start,Math.min(Number(endSeconds)||buffer.duration,buffer.duration));
-    const clipDuration=end-start;
-    if(clipDuration<1) throw new Error('Kipande cha wimbo lazima kiwe angalau sekunde 1.');
-    if(ctx.state==='suspended') await ctx.resume();
-    const dest=ctx.createMediaStreamDestination();
-    try{dest.channelCount=1;dest.channelCountMode='explicit';}catch(e){}
-    source=ctx.createBufferSource();source.buffer=buffer;source.connect(dest);
-    const chunks=[];recorder=new MediaRecorder(dest.stream,{mimeType:mime,audioBitsPerSecond:32000});
-    const finished=new Promise((resolve,reject)=>{
-      recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data);};
-      recorder.onerror=e=>reject(e.error||new Error('Kosa limetokea wakati wa kubana audio.'));
-      recorder.onstop=()=>resolve(new Blob(chunks,{type:mime}));
-    });
-    const stop=()=>{if(recorder?.state==='recording'){try{recorder.stop();}catch(e){}}};
-    source.onended=()=>{if(watchdog)clearTimeout(watchdog);setTimeout(stop,100);};
-    recorder.start(250);source.start(0,start,clipDuration);
-    watchdog=setTimeout(stop,clipDuration*1000+1800);
-    const blob=await finished;
-    if(watchdog)clearTimeout(watchdog);
-    if(!blob?.size)throw new Error('Conversion imetoa faili tupu. Jaribu tena.');
-    return {blob,duration:clipDuration,mime};
-  }finally{
-    if(watchdog)clearTimeout(watchdog);
-    try{source?.disconnect();}catch(e){}
-    try{if(recorder?.state==='recording')recorder.stop();}catch(e){}
-    try{await ctx.close();}catch(e){}
-  }
+    const input=await file.arrayBuffer();
+    const decoded=await decodeCtx.decodeAudioData(input.slice(0));
+    const start=Math.max(0,Math.min(Number(startSeconds)||0,decoded.duration));
+    const end=Math.max(start,Math.min(Number(endSeconds)||decoded.duration,decoded.duration));
+    const duration=end-start;
+    if(duration<1) throw new Error('Kipande cha wimbo lazima kiwe angalau sekunde 1.');
+    // Offline rendering hukata na kubadilisha sample rate bila kurekodi wimbo kwa muda halisi.
+    const sampleRate=22050;
+    const frameCount=Math.ceil(duration*sampleRate);
+    if(44+frameCount*2>20*1024*1024) throw new Error('Kipande ulichochagua ni kikubwa kuliko 20 MB. Punguza muda wa kipande.');
+    const offline=new Offline(1,frameCount,sampleRate);
+    const source=offline.createBufferSource();
+    source.buffer=decoded;
+    source.connect(offline.destination);
+    source.start(0,start,duration);
+    const rendered=await offline.startRendering();
+    const samples=rendered.getChannelData(0);
+    const dataBytes=samples.length*2;
+    if(dataBytes+44>20*1024*1024) throw new Error('Kipande ulichochagua ni kikubwa kuliko 20 MB. Punguza muda wa kipande.');
+    const buffer=new ArrayBuffer(44+dataBytes);
+    const view=new DataView(buffer);
+    const write=(offset,str)=>{for(let i=0;i<str.length;i++)view.setUint8(offset+i,str.charCodeAt(i));};
+    write(0,'RIFF'); view.setUint32(4,36+dataBytes,true); write(8,'WAVE');
+    write(12,'fmt '); view.setUint32(16,16,true); view.setUint16(20,1,true);
+    view.setUint16(22,1,true); view.setUint32(24,sampleRate,true);
+    view.setUint32(28,sampleRate*2,true); view.setUint16(32,2,true); view.setUint16(34,16,true);
+    write(36,'data'); view.setUint32(40,dataBytes,true);
+    let offset=44;
+    for(let i=0;i<samples.length;i++){
+      const s=Math.max(-1,Math.min(1,samples[i]));
+      view.setInt16(offset,s<0?s*0x8000:s*0x7fff,true); offset+=2;
+    }
+    return {blob:new Blob([buffer],{type:'audio/wav'}),duration,mime:'audio/wav'};
+  }finally{try{await decodeCtx.close();}catch(e){}}
 }
 function escapeMusicHtml(value){
   return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
+// Compatibility aliases: baadhi ya sehemu za UI za zamani huita escapeHtml/escapeHTML.
+function escapeHtml(value){ return escapeMusicHtml(value); }
+function escapeHTML(value){ return escapeMusicHtml(value); }
 async function uploadInvitationMusic(){
   const file=document.getElementById('invMusicFile').files?.[0];
   const eventId=document.getElementById('invDesignEventId').value;
@@ -8297,14 +8302,14 @@ async function uploadInvitationMusic(){
     const {start,end}=getMusicTrimRange();
     const validTrim=musicSourceDuration>0 && end-start>=1;
     if(musicSourceDuration>0 && !validTrim)throw new Error('Chagua kipande cha angalau sekunde 1.');
-    let blob=file,duration=musicSourceDuration||0,mime=file.type||'application/octet-stream',ext='';
+    let blob=file,duration=musicSourceDuration||0,mime=file.type||'audio/mpeg',ext='';
     const isTrimmed=musicSourceDuration>0 && (start>0.15 || end<musicSourceDuration-0.15);
     if(isTrimmed){
-      status.textContent=`Inakata na kubana kipande cha ${fmtMusicTime(end-start)}. Conversion huchukua karibu muda wa kipande ulichochagua...`;
+      status.textContent=`Inakata na kubana kipande cha ${fmtMusicTime(end-start)}. Inakata kipande kwa haraka bila kusubiri wimbo ucheze muda wote...`;
       showToast('Conversion ya kipande cha wimbo imeanza.','info');
-      const encoded=await encodeMusicToOpus(file,start,end);
+      const encoded=await encodeMusicToWavOffline(file,start,end);
       blob=encoded.blob;duration=encoded.duration;mime=encoded.mime;
-      ext=mime.includes('ogg')?'ogg':'webm';
+      ext='wav';
     }else{
       // Bila kukata wimbo, tunapakia faili lake la asili moja kwa moja - hakuna conversion ya kusubiri.
       ext=(file.name.split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'audio';
