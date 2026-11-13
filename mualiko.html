@@ -1331,7 +1331,7 @@
     const rank = (guest.vip_status || '').trim();
     const rankKey = rank.toLowerCase().replace(/[\s_-]+/g,'');
     // Usionyeshe lebo ya zamani ya "Snap Card(s)" chini ya jina la mgeni.
-    if(eventData?.show_vip_badge !== false && rank && rank.toLowerCase() !== 'none' && !['snapcard','snapcards'].includes(rankKey)){
+    if(rank && rank.toLowerCase() !== 'none' && !['snapcard','snapcards'].includes(rankKey)){
       if(rank.toLowerCase() === 'vvip'){
         html += `<span class="vip-pill vvip">👑 VVIP</span>`;
       } else if(rank.toLowerCase() === 'vip'){
