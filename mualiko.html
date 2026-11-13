@@ -1327,26 +1327,33 @@
   function renderGuestBadges(guest, eventData){
     const wrap = document.getElementById('guestBadges');
     if(!wrap) return;
-    let html = '';
-    const rank = (guest.vip_status || '').trim();
-    const rankKey = rank.toLowerCase().replace(/[\s_-]+/g,'');
-    // Usionyeshe lebo ya zamani ya "Snap Card(s)" chini ya jina la mgeni.
-    if(rank && rank.toLowerCase() !== 'none' && !['snapcard','snapcards'].includes(rankKey)){
-      if(rank.toLowerCase() === 'vvip'){
-        html += `<span class="vip-pill vvip">👑 VVIP</span>`;
-      } else if(rank.toLowerCase() === 'vip'){
-        html += `<span class="vip-pill vip">⭐ VIP</span>`;
-      } else {
-        html += `<span class="vip-pill vip">${rank}</span>`;
-      }
+    wrap.replaceChildren();
+
+    // Onyesha cheo chochote kilichohifadhiwa kwa mgeni bila kukichuja
+    // kwa aina ya VIP/VVIP au jina lake. Ficha tu pale sehemu iko tupu.
+    const rank = String(guest?.vip_status ?? '').trim();
+    if(rank){
+      const rankBadge = document.createElement('span');
+      rankBadge.className = 'vip-pill vip';
+      rankBadge.textContent = rank;
+      wrap.appendChild(rankBadge);
     }
+
     if(eventData?.show_group_label !== false){
-      const groupSize = Math.max(1, Number.parseInt(guest.group_size, 10) || 1);
+      const groupSize = Math.max(1, Number.parseInt(guest?.group_size, 10) || 1);
       const groupLabel = groupSize === 1 ? 'SINGLE' : groupSize === 2 ? 'DOUBLE' : `GROUP OF ${groupSize}`;
       const groupIcon = groupSize === 1 ? '👤' : '👥';
-      html += `<span class="group-pill"><span class="group-icon" aria-hidden="true">${groupIcon}</span><span>${groupLabel}</span></span>`;
+      const groupBadge = document.createElement('span');
+      groupBadge.className = 'group-pill';
+      const icon = document.createElement('span');
+      icon.className = 'group-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = groupIcon;
+      const label = document.createElement('span');
+      label.textContent = groupLabel;
+      groupBadge.append(icon, label);
+      wrap.appendChild(groupBadge);
     }
-    wrap.innerHTML = html;
   }
 
   let currentGuestCardId = null;      // (bado inatunzwa - inaweza kutumika baadaye)
